@@ -1,7 +1,7 @@
 # gs4mattr
 
 <!-- badges: start -->
-[![R-CMD-check](https://github.com/yourname/gs4mattr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/yourname/gs4mattr/actions/workflows/R-CMD-check.yaml)
+[![R-CMD-check](https://github.com/scottfrohn/gs4mattr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/scottfrohn/gs4mattr/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 Cell formatting and conditional formatting for Google Sheets, built as a
@@ -43,7 +43,7 @@ sheet_freeze(ss, n_rows = 1)
 
 ```r
 # once pushed to GitHub:
-devtools::install_github("yourname/gs4mattr")
+devtools::install_github("scottfrohn/gs4mattr")
 ```
 
 ## What's already covered by googlesheets4 (not duplicated here)
