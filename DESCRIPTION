@@ -1,0 +1,29 @@
+Package: gs4mattr
+Title: Cell Formatting and Conditional Formatting for 'googlesheets4'
+Version: 0.0.0.9000
+Authors@R: person("Your", "Name", email = "you@example.com", role = c("aut", "cre"))
+Description: Extends 'googlesheets4' with a formatting layer for Google Sheets:
+    basic cell formatting (fonts, colors, number formats, alignment, wrap),
+    borders, merged cells, frozen rows/columns, tab colors, and conditional
+    formatting (boolean and gradient rules), all built on the Sheets API v4
+    'batchUpdate' endpoint. Function names and argument order deliberately
+    mirror 'googlesheets4' (gs4_*, sheet_*, range_*) so it behaves like a
+    natural extension rather than a separate tool, and every function reuses
+    whatever auth 'googlesheets4' already has active.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Depends: R (>= 3.6)
+Imports:
+    googlesheets4 (>= 1.1.0),
+    cellranger,
+    cli,
+    rlang,
+    grDevices
+Suggests:
+    testthat (>= 3.1.7),
+    withr
+Config/testthat/edition: 3
+URL: https://github.com/yourname/gs4mattr
+BugReports: https://github.com/yourname/gs4mattr/issues
