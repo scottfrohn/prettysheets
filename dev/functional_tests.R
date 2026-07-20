@@ -21,11 +21,11 @@
 library(tidyverse)
 library(googlesheets4)
 library(googledrive)
+library(prettysheets)
 
 gs4_auth()
 
 
-devtools::load_all()
 #
 
 # ── 0. Setup: create one throwaway spreadsheet for this whole session ──────
@@ -43,10 +43,6 @@ devtools::load_all()
 #   )
 # )
 
-## Read in IA data
-g6_items <- read_sheet("https://docs.google.com/spreadsheets/d/1-10NPxt5vyAf16Y9EyI6w09Cm2g2R1s7NdNh0knKcpo/",
-                       sheet = "Items")
-
 ## Test sheet name
 ss <- "https://docs.google.com/spreadsheets/d/11xchp8Ov6MytIKcgvTICThXpWAdAEcc_4cYa-m3V1l8/"
 
@@ -59,7 +55,6 @@ write_sheet(data.frame(score = c(45, 62, 78, 90, 33, 88, 55, 71),
                        flag = c("", "", "urgent", "", "urgent", "", "", "urgent")), 
             ss = ss,
             sheet = "conditional")
-write_sheet(g6_items, ss, sheet = "g6_items")
 
 # ── 1. gs4_color() ──────────────────────────────────────────────────────────
 # Pure/offline -- no sheet interaction, just confirm the conversion looks right
@@ -95,7 +90,6 @@ gs4_palette_color("not a real color") # not close to anything -- should
 sheet_clear_format(ss, sheet = "basic")
 sheet_clear_format(ss, sheet = "conditional")
 sheet_clear_format(ss, sheet = "conditional")
-sheet_clear_format(ss, sheet = "g6_items")
 
 # range = "A1:L1"
 # Expect: row 1 of "basic" bold with a light blue background
@@ -159,17 +153,11 @@ range_format(ss, sheet = "basic", range = "H3:I4",
 # text/value is untouched -- link is a pure textFormat property)
 range_format(ss, sheet = "basic", range = "A2", link = "https://www.khanacademy.org")
 
-write_sheet(g6_items, ss, sheet = "g6_items")
-gs_theme_clean(ss, sheet = "g6_items")
-gs_theme_fun(ss, sheet = "g6_items")
-gs_theme_professional(ss, sheet = "g6_items")
-gs_theme_stylish(ss, sheet = "g6_items")
-
-# Expect: g6_items goes back to fully unformatted -- bold/background/etc.
+# Expect: basic goes back to fully unformatted -- bold/background/etc.
 # from gs_theme_clean() AND the alternating-color banding it added are both
 # gone (banding is a separate sheet-level object, so sheet_clear_format()
 # has to remove it explicitly, not just reset cell formatting)
-sheet_clear_format(ss, sheet = "g6_items")
+sheet_clear_format(ss, sheet = "basic")
 
 
 # ── 4. range_format_border() ────────────────────────────────────────────────
@@ -199,7 +187,7 @@ range_format(ss, sheet = "basic", range = "H3:I4",
 # range = NULL would clear the WHOLE sheet instead -- scoped here to H3:I4
 # so nothing else on "basic" is touched. Also removes any banded range
 # (alternating colors) overlapping H3:I4, if there is one -- see the
-# g6_items repro up in section 3 for a banding-specific demo
+# basic repro up in section 3 for a banding-specific demo
 sheet_clear_format(ss, sheet = "basic", range = "H3:I4")
 
 
@@ -355,8 +343,8 @@ theme_demo <- data.frame(
 googlesheets4::sheet_write(theme_demo, ss, sheet = "theme_clean")
 gs_theme_clean(ss, sheet = "theme_clean", data = theme_demo)
 
-# Expect: Take the existing g6_items tab and make clean format
-gs_theme_clean(ss, sheet = "g6_items")
+# Expect: Take the existing basic tab and make clean format
+gs_theme_clean(ss, sheet = "basic")
 
 # Expect: same as above, except notes now WRAPS onto multiple lines (and
 # keeps its wider fixed column) instead of being clipped to one line
