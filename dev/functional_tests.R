@@ -21,11 +21,12 @@
 library(tidyverse)
 library(googlesheets4)
 library(googledrive)
-library(prettysheets)
 
 gs4_auth()
 
 
+devtools::load_all()    # Load all changes to package
+# library(prettysheets)   # Load package as published
 #
 
 # ── 0. Setup: create one throwaway spreadsheet for this whole session ──────
@@ -226,6 +227,14 @@ range_format(ss, sheet = "basic", range = gs4_cols("mpg", "hp"),
 # excludes the header by default, but include_header = TRUE brings it back in
 range_format(ss, sheet = "basic", range = gs4_cols("wt"),
              include_header = TRUE, bold = TRUE)
+
+
+# ── 10b. gs4_glimpse_cols() -- offline/pure ─────────────────────────────────
+# Expect: a two-row printout, column letters (A, B, C, ...) above the
+# matching data frame column names, wrapped into more than one block if
+# there are too many columns to fit the console width
+gs4_glimpse_cols(mtcars)
+gs4_glimpse_cols(g6_items)
 
 
 # ── 11. Conditional formatting: rule builders (all offline/pure) ───────────
