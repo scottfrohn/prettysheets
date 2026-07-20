@@ -42,7 +42,11 @@ sheet_freeze(ss, n_rows = 1)
 ## Installation
 
 ```r
+<<<<<<< HEAD
 pak::pak("scottfrohn/prettysheets")
+=======
+devtools::install_github("scottfrohn/prettysheets")
+>>>>>>> 9bd72ecaa4f7bccf5ca4feb2863a4cbdf3346d44
 ```
 
 ## What's already covered by googlesheets4 (not duplicated here)
