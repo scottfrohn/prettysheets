@@ -8,7 +8,7 @@ range_format_border(
   ss,
   sheet = NULL,
   range = NULL,
-  sides = "all",
+  sides = "outside",
   style = "SOLID",
   color = "black"
 )
@@ -23,23 +23,49 @@ visible sheet, or the sheet named in \code{range} if \code{range} is a
 \code{cell_limits} object built from \code{"SheetName!A1:B2"}.}
 
 \item{range}{\code{NULL} (whole sheet), an A1-style string (\code{"A1:D10"},
-\code{"B:B"}, \code{"2:5"}), or a \code{cellranger} helper such as
-\code{\link[cellranger:cell_rows]{cellranger::cell_rows()}} or \code{\link[cellranger:cell_cols]{cellranger::cell_cols()}}.}
+\code{"B:B"}, \code{"2:5"}), a \code{cellranger} helper such as
+\code{\link[cellranger:cell_rows]{cellranger::cell_rows()}} or \code{\link[cellranger:cell_cols]{cellranger::cell_cols()}}, or \code{\link[=gs4_cols]{gs4_cols()}}
+to target one or more columns by header name.}
 
-\item{sides}{Which sides to draw: any of \code{"top"}, \code{"bottom"}, \code{"left"},
-\code{"right"}, \code{"innerHorizontal"}, \code{"innerVertical"}, or \code{"all"} as a
-shorthand for all four outer sides.}
+\item{sides}{Which sides to draw, any combination of:
+\describe{
+\item{\code{"top"}, \code{"bottom"}, \code{"left"}, \code{"right"}}{A single outer side.}
+\item{\code{"outside"}}{Shorthand for all four outer sides, i.e.
+\code{c("top", "bottom", "left", "right")}. This is what \code{range_format_border()}
+drew when \code{sides} was \code{"all"} prior to prettysheets 0.0.0.9000's border rework.}
+\item{\code{"inside"}}{Shorthand for the gridlines \emph{between} cells in the
+range, i.e. \code{c("innerHorizontal", "innerVertical")}.}
+\item{\code{"innerHorizontal"}, \code{"innerVertical"}}{A single inner gridline
+direction on its own.}
+\item{\code{"all"}}{Shorthand for \code{"outside"} and \code{"inside"} together —
+every side and every inner gridline.}
+}
+Defaults to \code{"outside"}.}
 
 \item{style}{Border line style: one of \code{"SOLID"}, \code{"SOLID_MEDIUM"},
-\code{"SOLID_THICK"}, \code{"DASHED"}, \code{"DOTTED"}, \code{"DOUBLE"}.}
+\code{"SOLID_THICK"}, \code{"DASHED"}, \code{"DOTTED"}, \code{"DOUBLE"}, or \code{"NONE"} to
+remove the border(s) named in \code{sides} — an \code{UpdateBordersRequest} is
+independent of \code{RepeatCellRequest}, so this clears borders without
+touching any other formatting (fill, font, number format, etc.) on the
+same range.}
 
-\item{color}{Border color: hex string or named R color.}
+\item{color}{Border color: hex string, named R color, or \link{gs4_palette}
+name (converted via \code{\link[=gs4_color]{gs4_color()}}). Ignored when \code{style = "NONE"}.}
 }
 \value{
 The input \code{ss}, as a \code{sheets_id}, invisibly.
 }
 \description{
 Apply a border to a range
+}
+\examples{
+\dontrun{
+ss <- googlesheets4::gs4_create("prettysheets-demo", sheets = mtcars)
+range_format_border(ss, range = "A1:K1")
+range_format_border(ss, range = "A1:K33", sides = "all", color = "gray80")
+range_format_border(ss, range = "A1:K33", sides = "all", style = "NONE")
+range_format_border(ss, range = gs4_cols("mpg", "hp"))
+}
 }
 \seealso{
 Makes an \code{UpdateBordersRequest}:

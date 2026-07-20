@@ -1,22 +1,22 @@
-# gs4mattr
+# prettysheets
 
 <!-- badges: start -->
-[![R-CMD-check](https://github.com/scottfrohn/gs4mattr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/scottfrohn/gs4mattr/actions/workflows/R-CMD-check.yaml)
+[![R-CMD-check](https://github.com/scottfrohn/prettysheets/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/scottfrohn/prettysheets/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 Cell formatting and conditional formatting for Google Sheets, built as a
 natural extension of [`googlesheets4`](https://googlesheets4.tidyverse.org/).
 
-`gs4mattr` reuses `googlesheets4`'s own auth, sheet-identification, and
+`prettysheets` reuses `googlesheets4`'s own auth, sheet-identification, and
 range-specification conventions, and follows its naming scheme
 (`gs4_*` / `sheet_*` / `range_*`) so functions are easy to guess if you
 already know `googlesheets4`.
 
 ```r
 library(googlesheets4)
-library(gs4mattr)
+library(prettysheets)
 
-ss <- gs4_create("gs4mattr-demo", sheets = mtcars)
+ss <- gs4_create("prettysheets-demo", sheets = mtcars)
 
 ss |>
   range_write_format(
@@ -43,22 +43,22 @@ sheet_freeze(ss, n_rows = 1)
 
 ```r
 # once pushed to GitHub:
-devtools::install_github("scottfrohn/gs4mattr")
+devtools::install_github("scottfrohn/prettysheets")
 ```
 
 ## What's already covered by googlesheets4 (not duplicated here)
 
 - **`range_autofit()`** — auto-sizes columns/rows to fit content.
 - **`sheet_write()`** — already bolds the header row and freezes row 1
-  automatically when you write a data frame as a "table." `gs4mattr`'s
+  automatically when you write a data frame as a "table." `prettysheets`'s
   `sheet_format_header()` / `sheet_freeze()` are for the case where you
   wrote data with `range_write()` instead (which does *not* auto-style).
 
-## A known API limitation (not a gs4mattr limitation)
+## A known API limitation (not a prettysheets limitation)
 
 The Sheets API's conditional formatting only supports **boolean** and
 **gradient** rules — there's no data-bar rule in the API at all (data bars
-are a Sheets UI-only feature), so `gs4mattr` doesn't offer
+are a Sheets UI-only feature), so `prettysheets` doesn't offer
 `range_add_databar()`.
 
 ## Development status

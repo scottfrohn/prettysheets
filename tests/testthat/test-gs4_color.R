@@ -26,3 +26,27 @@ test_that("gs4_color respects the alpha argument", {
   out <- gs4_color("black", alpha = 0.5)
   expect_equal(out$alpha, 0.5)
 })
+
+test_that("gs4_color falls back to gs4_palette names col2rgb() doesn't know", {
+  out <- gs4_color("light green 1")
+  expect_equal(out, gs4_color(gs4_palette_color("light green 1")))
+
+  out2 <- gs4_color("dark yellow 1")
+  expect_equal(out2, gs4_color(gs4_palette_color("dark yellow 1")))
+})
+
+test_that("gs4_color's palette fallback is case/whitespace-insensitive, like gs4_palette_color()", {
+  expect_equal(gs4_color("Light Green 1"), gs4_color("light green 1"))
+  expect_equal(gs4_color("  dark yellow 1  "), gs4_color("dark yellow 1"))
+})
+
+test_that("gs4_color prefers col2rgb() over the palette when both would match", {
+  # "red" is both a base R color and (as a substring) close to gs4_palette
+  # names -- col2rgb() should win, so this is exactly base R red
+  out <- gs4_color("red")
+  expect_equal(out, list(red = 1, green = 0, blue = 0))
+})
+
+test_that("gs4_color still errors on a genuinely unknown color", {
+  expect_error(gs4_color("not a real color"), "Unknown color")
+})

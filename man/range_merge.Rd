@@ -19,8 +19,9 @@ visible sheet, or the sheet named in \code{range} if \code{range} is a
 \code{cell_limits} object built from \code{"SheetName!A1:B2"}.}
 
 \item{range}{\code{NULL} (whole sheet), an A1-style string (\code{"A1:D10"},
-\code{"B:B"}, \code{"2:5"}), or a \code{cellranger} helper such as
-\code{\link[cellranger:cell_rows]{cellranger::cell_rows()}} or \code{\link[cellranger:cell_cols]{cellranger::cell_cols()}}.}
+\code{"B:B"}, \code{"2:5"}), a \code{cellranger} helper such as
+\code{\link[cellranger:cell_rows]{cellranger::cell_rows()}} or \code{\link[cellranger:cell_cols]{cellranger::cell_cols()}}, or \code{\link[=gs4_cols]{gs4_cols()}}
+to target one or more columns by header name.}
 
 \item{type}{How to merge: \code{"all"} (one big merged cell), \code{"columns"}
 (merge each column of the range separately), or \code{"rows"} (merge each

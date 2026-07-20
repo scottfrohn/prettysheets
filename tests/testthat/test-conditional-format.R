@@ -50,3 +50,76 @@ test_that("cf_gradient supports an explicit midpoint", {
   expect_named(g, c("minpoint", "midpoint", "maxpoint"))
   expect_equal(g$midpoint$value, "50")
 })
+
+test_that("range_add_conditional_format() builds one rule covering all of resolve_grid_ranges()'s ranges", {
+  # resolve_grid_ranges() (plural) is what understands gs4_cols() -- a
+  # single selection can expand into more than one GridRange (one per
+  # contiguous run of matched columns), and a ConditionalFormatRule's own
+  # `ranges` accepts a list, so this confirms they all land in ONE rule/one
+  # request instead of erroring or splitting into separate rules.
+  requests <- list()
+  local_mocked_bindings(as_sheets_id = function(x) x, .package = "googlesheets4")
+  local_mocked_bindings(
+    resolve_grid_ranges = function(ss, sheet, range) {
+      list(list(sheetId = 0, startColumnIndex = 0L, endColumnIndex = 1L),
+           list(sheetId = 0, startColumnIndex = 3L, endColumnIndex = 4L))
+    },
+    send_or_queue = function(ss, request) {
+      requests[[length(requests) + 1]] <<- request
+      invisible(ss)
+    }
+  )
+
+  range_add_conditional_format(
+    "fake", range = gs4_cols("mpg", "hp"),
+    rule = cf_cell_value(">", 100), format = cf_format(bold = TRUE)
+  )
+
+  expect_length(requests, 1)
+  rule <- requests[[1]]$addConditionalFormatRule$rule
+  expect_length(rule$ranges, 2)
+  expect_equal(rule$booleanRule$condition, cf_cell_value(">", 100))
+  expect_equal(rule$booleanRule$format, cf_format(bold = TRUE))
+})
+
+test_that("range_add_conditional_format() works with a plain A1 range too (a single resolved GridRange)", {
+  requests <- list()
+  local_mocked_bindings(as_sheets_id = function(x) x, .package = "googlesheets4")
+  local_mocked_bindings(
+    resolve_grid_ranges = function(ss, sheet, range) list(list(sheetId = 0, startRowIndex = 1L, endRowIndex = 10L)),
+    send_or_queue = function(ss, request) {
+      requests[[length(requests) + 1]] <<- request
+      invisible(ss)
+    }
+  )
+
+  range_add_conditional_format(
+    "fake", range = "A2:A10",
+    rule = cf_cell_value(">", 100), format = cf_format(bold = TRUE)
+  )
+
+  expect_length(requests[[1]]$addConditionalFormatRule$rule$ranges, 1)
+})
+
+test_that("range_add_gradient_format() also resolves a gs4_cols() range into one rule", {
+  requests <- list()
+  local_mocked_bindings(as_sheets_id = function(x) x, .package = "googlesheets4")
+  local_mocked_bindings(
+    resolve_grid_ranges = function(ss, sheet, range) {
+      list(list(sheetId = 0, startColumnIndex = 0L, endColumnIndex = 1L),
+           list(sheetId = 0, startColumnIndex = 3L, endColumnIndex = 4L))
+    },
+    send_or_queue = function(ss, request) {
+      requests[[length(requests) + 1]] <<- request
+      invisible(ss)
+    }
+  )
+
+  gradient <- cf_gradient(min_color = "white", max_color = "forestgreen")
+  range_add_gradient_format("fake", range = gs4_cols("mpg", "hp"), gradient = gradient)
+
+  expect_length(requests, 1)
+  rule <- requests[[1]]$addConditionalFormatRule$rule
+  expect_length(rule$ranges, 2)
+  expect_equal(rule$gradientRule, gradient)
+})

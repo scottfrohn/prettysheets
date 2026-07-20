@@ -20,7 +20,10 @@ range_format(
   number_format_type = "NUMBER",
   horizontal_alignment = NULL,
   vertical_alignment = NULL,
-  wrap_strategy = NULL
+  wrap_strategy = NULL,
+  link = NULL,
+  clear_first = FALSE,
+  include_header = FALSE
 )
 }
 \arguments{
@@ -33,8 +36,9 @@ visible sheet, or the sheet named in \code{range} if \code{range} is a
 \code{cell_limits} object built from \code{"SheetName!A1:B2"}.}
 
 \item{range}{\code{NULL} (whole sheet), an A1-style string (\code{"A1:D10"},
-\code{"B:B"}, \code{"2:5"}), or a \code{cellranger} helper such as
-\code{\link[cellranger:cell_rows]{cellranger::cell_rows()}} or \code{\link[cellranger:cell_cols]{cellranger::cell_cols()}}.}
+\code{"B:B"}, \code{"2:5"}), a \code{cellranger} helper such as
+\code{\link[cellranger:cell_rows]{cellranger::cell_rows()}} or \code{\link[cellranger:cell_cols]{cellranger::cell_cols()}}, or \code{\link[=gs4_cols]{gs4_cols()}}
+to target one or more columns by header name.}
 
 \item{bold, italic, underline, strikethrough}{Logical.}
 
@@ -42,8 +46,9 @@ visible sheet, or the sheet named in \code{range} if \code{range} is a
 
 \item{font_family}{Character, e.g. \code{"Arial"}.}
 
-\item{font_color, background_color}{A color: hex string (\code{"#F4CCCC"}) or
-named R color (\code{"steelblue"}), converted via \code{\link[=gs4_color]{gs4_color()}}.}
+\item{font_color, background_color}{A color: hex string (\code{"#F4CCCC"}),
+named R color (\code{"steelblue"}), or \link{gs4_palette} name (\code{"dark yellow 1"}),
+converted via \code{\link[=gs4_color]{gs4_color()}}.}
 
 \item{number_format}{A number format pattern string, e.g. \code{"$#,##0.00"}
 or \code{"0.0\%"}.}
@@ -58,13 +63,41 @@ if \code{number_format} is supplied.}
 
 \item{wrap_strategy}{One of \code{"OVERFLOW_CELL"}, \code{"LEGACY_WRAP"}, \code{"CLIP"},
 \code{"WRAP"}.}
+
+\item{link}{A URL string. Makes every cell in \code{range} a clickable
+hyperlink to this same URL, as a formatting property (no
+\verb{=HYPERLINK()} formula, no change to the cells' underlying values).
+Since this applies one URL to the \emph{whole} range, it's meant for
+ranges you want all pointing at one link (e.g. a "source" column
+header); to give each cell in a column its own distinct link (e.g. a
+column of different URLs), call \code{range_format()} once per cell instead.}
+
+\item{clear_first}{Logical; clear all existing formatting on \code{range}
+(see \code{\link[=sheet_clear_format]{sheet_clear_format()}}) before applying the formatting requested
+in this call. Default \code{FALSE}, so repeated \code{range_format()} calls layer
+on top of each other as described above. Set \code{TRUE} to start from a
+blank slate instead — useful if the range may already carry formatting
+you don't want to inherit.}
+
+\item{include_header}{Logical; whether a \emph{whole-column} \code{range} includes
+its header row. Applies to \code{\link[=gs4_cols]{gs4_cols()}} (which otherwise selects just
+the data rows below the header) and to any other fully open-ended
+whole-column reference with no row bounds at all -- an A1 shorthand
+string like \code{"B:B"}/\code{"B:D"}, or a bare \code{\link[cellranger:cell_cols]{cellranger::cell_cols()}}.
+Default \code{FALSE}, so a call like \code{range_format(range = "B:B", ...)}
+formats row 2 downward, not row 1 -- pass \code{TRUE} for the literal A1
+meaning of \code{"B:B"} (the whole column, header included). Has no effect
+on ranges that already specify explicit rows (\code{"B2:B33"}, \code{"A1:D10"})
+or on whole-row references (\code{"2:5"}), since there's no header \emph{row} to
+exclude from a selection that already names its rows, or from a
+selection of specific rows in the first place.}
 }
 \value{
 The input \code{ss}, as a \code{sheets_id}, invisibly.
 }
 \description{
 Formats fonts, colors, number formats, alignment, and text wrap for a
-range of cells. This is \code{gs4mattr}'s equivalent of
+range of cells. This is \code{prettysheets}'s equivalent of
 \code{\link[googlesheets4:range_write]{googlesheets4::range_write()}} for styling rather than data: same \code{ss},
 \code{sheet}, \code{range} argument order, and it accepts the same range inputs
 (A1 strings or \code{cellranger} helpers like \code{\link[cellranger:cell_rows]{cellranger::cell_rows()}}).
@@ -77,9 +110,15 @@ one call undoing another.
 }
 \examples{
 \dontrun{
-ss <- googlesheets4::gs4_create("gs4mattr-demo", sheets = mtcars)
+ss <- googlesheets4::gs4_create("prettysheets-demo", sheets = mtcars)
 range_format(ss, range = "A1:K1", bold = TRUE, background_color = "#D9E1F2")
 range_format(ss, range = "B2:B33", number_format = "0.0", horizontal_alignment = "RIGHT")
+range_format(ss, range = "A1:K1", clear_first = TRUE, bold = TRUE)
+range_format(ss, range = gs4_cols("mpg", "hp"), number_format = "0.0")
+range_format(ss, range = gs4_cols("mpg"), include_header = TRUE, bold = TRUE)
+range_format(ss, range = "B:B", number_format = "0.0") # skips row 1
+range_format(ss, range = "B:B", include_header = TRUE, number_format = "0.0") # row 1 too
+range_format(ss, range = "A2", link = "https://www.khanacademy.org")
 }
 }
 \seealso{

@@ -1,4 +1,4 @@
 library(testthat)
-library(gs4mattr)
+library(prettysheets)
 
-test_check("gs4mattr")
+test_check("prettysheets")

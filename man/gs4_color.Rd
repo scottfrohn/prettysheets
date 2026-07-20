@@ -18,7 +18,9 @@ is \code{NULL}.
 }
 \description{
 Accepts a hex string (e.g. \code{"#F4CCCC"}), a named R color (e.g. \code{"steelblue"},
-anything \code{\link[grDevices:col2rgb]{grDevices::col2rgb()}} understands), or an already-built list with
+anything \code{\link[grDevices:col2rgb]{grDevices::col2rgb()}} understands), a \link{gs4_palette} name (e.g.
+\code{"light cornflower blue 1"}, \code{"dark yellow 1"} -- anything
+\code{\link[=gs4_palette_color]{gs4_palette_color()}} understands), or an already-built list with
 \code{red}/\code{green}/\code{blue} components (passed through unchanged, so you can
 construct a \code{Color} object by hand if you need \code{alpha} control the helper
 doesn't expose yet).
@@ -26,4 +28,5 @@ doesn't expose yet).
 \examples{
 gs4_color("#F4CCCC")
 gs4_color("steelblue")
+gs4_color("light cornflower blue 1")
 }

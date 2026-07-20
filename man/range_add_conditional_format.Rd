@@ -16,8 +16,9 @@ visible sheet, or the sheet named in \code{range} if \code{range} is a
 \code{cell_limits} object built from \code{"SheetName!A1:B2"}.}
 
 \item{range}{\code{NULL} (whole sheet), an A1-style string (\code{"A1:D10"},
-\code{"B:B"}, \code{"2:5"}), or a \code{cellranger} helper such as
-\code{\link[cellranger:cell_rows]{cellranger::cell_rows()}} or \code{\link[cellranger:cell_cols]{cellranger::cell_cols()}}.}
+\code{"B:B"}, \code{"2:5"}), a \code{cellranger} helper such as
+\code{\link[cellranger:cell_rows]{cellranger::cell_rows()}} or \code{\link[cellranger:cell_cols]{cellranger::cell_cols()}}, or \code{\link[=gs4_cols]{gs4_cols()}}
+to target one or more columns by header name.}
 
 \item{rule}{A condition built with \code{\link[=cf_cell_value]{cf_cell_value()}}, \code{\link[=cf_text_contains]{cf_text_contains()}},
 \code{\link[=cf_text_eq]{cf_text_eq()}}, \code{\link[=cf_custom_formula]{cf_custom_formula()}}, \code{\link[=cf_blank]{cf_blank()}}, or \code{\link[=cf_not_blank]{cf_not_blank()}}.}
@@ -40,6 +41,11 @@ range_add_conditional_format(
   ss, range = "C2:C100",
   rule = cf_cell_value(">", 100),
   format = cf_format(background_color = "#F4CCCC")
+)
+range_add_conditional_format(
+  ss, range = gs4_cols("score"),
+  rule = cf_cell_value(">", 90),
+  format = cf_format(bold = TRUE, background_color = "#F4CCCC")
 )
 }
 }

@@ -2,9 +2,9 @@
 % Please edit documentation in R/sheet-structure.R
 \name{sheet_format_tabcolor}
 \alias{sheet_format_tabcolor}
-\title{Set a (work)sheet's tab color}
+\title{Set (or clear) a (work)sheet's tab color}
 \usage{
-sheet_format_tabcolor(ss, sheet = NULL, color)
+sheet_format_tabcolor(ss, sheet = NULL, color = NULL)
 }
 \arguments{
 \item{ss}{Something that identifies a Google Sheet, processed through
@@ -15,13 +15,24 @@ sheet_format_tabcolor(ss, sheet = NULL, color)
 visible sheet, or the sheet named in \code{range} if \code{range} is a
 \code{cell_limits} object built from \code{"SheetName!A1:B2"}.}
 
-\item{color}{Hex string or named R color.}
+\item{color}{Hex string, named R color, or \link{gs4_palette} name. \code{NULL}
+clears the tab back to its default (no color) -- the \code{fields} mask
+still names \code{tabColor}, but with no value supplied for it in
+\code{properties}, which is the Sheets API's own convention for resetting
+a masked field to its default rather than leaving it untouched.}
 }
 \value{
 The input \code{ss}, as a \code{sheets_id}, invisibly.
 }
 \description{
-Set a (work)sheet's tab color
+Set (or clear) a (work)sheet's tab color
+}
+\examples{
+\dontrun{
+ss <- googlesheets4::gs4_create("prettysheets-demo", sheets = mtcars)
+sheet_format_tabcolor(ss, color = "forestgreen")
+sheet_format_tabcolor(ss, color = NULL) # clears it back to no color
+}
 }
 \seealso{
 Makes an \code{UpdateSheetPropertiesRequest}:

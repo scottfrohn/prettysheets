@@ -67,15 +67,23 @@ rule. Optional.}
 The input \code{ss}, as a \code{sheets_id}, invisibly.
 }
 \description{
-Combines \code{\link[googlesheets4:range_write]{googlesheets4::range_write()}} with \code{gs4mattr}'s formatting
+Combines \code{\link[googlesheets4:range_write]{googlesheets4::range_write()}} with \code{prettysheets}'s formatting
 functions. Internally calls \code{range_write(..., reformat = FALSE)} \emph{before}
 applying formatting — \code{range_write()}'s default \code{reformat = TRUE} clears
 existing formatting on write, which would otherwise immediately erase
 whatever this function had just applied.
 }
+\details{
+Unlike \code{range_write()} itself, \code{sheet} doesn't need to already exist --
+if it's a name not already in the spreadsheet, an empty (work)sheet by
+that name is added first (\code{range_write()} alone errors in this case,
+since -- unlike \code{googlesheets4::sheet_write()} -- it doesn't create
+sheets on demand), sized to fit \code{data} (plus a header row, if
+\code{col_names}) rather than left at the API's own default grid size.
+}
 \examples{
 \dontrun{
-ss <- googlesheets4::gs4_create("gs4mattr-write-demo")
+ss <- googlesheets4::gs4_create("prettysheets-write-demo")
 range_write_format(
   ss, data = mtcars, sheet = "Sheet1", range = "A1",
   header_background_color = "#D9E1F2",

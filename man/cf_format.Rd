@@ -15,7 +15,8 @@ cf_format(
 \arguments{
 \item{bold, italic, strikethrough}{Logical.}
 
-\item{font_color, background_color}{A color: hex string or named R color.}
+\item{font_color, background_color}{A color: hex string, named R color,
+or \link{gs4_palette} name.}
 }
 \value{
 A \code{CellFormat} list suitable as the \code{format} argument of

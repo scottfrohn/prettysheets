@@ -80,7 +80,8 @@ cf_not_blank <- function() list(type = "NOT_BLANK")
 #' exposed here.)
 #'
 #' @param bold,italic,strikethrough Logical.
-#' @param font_color,background_color A color: hex string or named R color.
+#' @param font_color,background_color A color: hex string, named R color,
+#'   or [gs4_palette] name.
 #' @return A `CellFormat` list suitable as the `format` argument of
 #'   [range_add_conditional_format()].
 #' @export
@@ -118,15 +119,26 @@ cf_format <- function(bold = NULL,
 #'   rule = cf_cell_value(">", 100),
 #'   format = cf_format(background_color = "#F4CCCC")
 #' )
+#' range_add_conditional_format(
+#'   ss, range = gs4_cols("score"),
+#'   rule = cf_cell_value(">", 90),
+#'   format = cf_format(bold = TRUE, background_color = "#F4CCCC")
+#' )
 #' }
 range_add_conditional_format <- function(ss, sheet = NULL, range, rule, format, index = 0) {
   ss <- googlesheets4::as_sheets_id(ss)
-  grid_range <- resolve_grid_range(ss, sheet, range)
+  # resolve_grid_ranges() (plural), not resolve_grid_range() -- range can be
+  # a gs4_cols() selection, which may expand into more than one GridRange
+  # (one per contiguous run of matched columns). A single
+  # ConditionalFormatRule's `ranges` accepts a list of GridRanges, so every
+  # matched range is folded into one rule/one request rather than one rule
+  # per range.
+  grid_ranges <- resolve_grid_ranges(ss, sheet, range)
 
   request <- list(
     addConditionalFormatRule = list(
       rule = list(
-        ranges = list(grid_range),
+        ranges = grid_ranges,
         booleanRule = list(condition = rule, format = format)
       ),
       index = index
@@ -167,7 +179,7 @@ cf_gradient <- function(min_color,
     if (!is.null(value)) p$value <- as.character(value)
     p
   }
-  compact(list(
+  drop_nulls(list(
     minpoint = point(min_type, min_color, min_value),
     midpoint = point(mid_type, mid_color, mid_value),
     maxpoint = point(max_type, max_color, max_value)
@@ -189,15 +201,22 @@ cf_gradient <- function(min_color,
 #'   ss, range = "D2:D100",
 #'   gradient = cf_gradient(min_color = "white", max_color = "forestgreen")
 #' )
+#' range_add_gradient_format(
+#'   ss, range = gs4_cols("score"),
+#'   gradient = cf_gradient(min_color = "white", max_color = "forestgreen")
+#' )
 #' }
 range_add_gradient_format <- function(ss, sheet = NULL, range, gradient, index = 0) {
   ss <- googlesheets4::as_sheets_id(ss)
-  grid_range <- resolve_grid_range(ss, sheet, range)
+  # See range_add_conditional_format() -- resolve_grid_ranges() (plural) so
+  # a gs4_cols() selection (possibly several contiguous runs) is supported,
+  # all folded into this one rule's `ranges` list.
+  grid_ranges <- resolve_grid_ranges(ss, sheet, range)
 
   request <- list(
     addConditionalFormatRule = list(
       rule = list(
-        ranges = list(grid_range),
+        ranges = grid_ranges,
         gradientRule = gradient
       ),
       index = index
