@@ -16,11 +16,34 @@ already know `googlesheets4`.
 library(googlesheets4)
 library(prettysheets)
 
-ss <- gs4_create("prettysheets-demo", sheets = mtcars)
+ss <- gs4_create("prettysheets-demo", sheets = iris)
+gs4_browse(ss)
 
+# Format a specified range
+ss |> 
+  range_format(
+    sheet = "iris",
+    range = "B:B",
+    bold = TRUE,
+    background_color = "light yellow 1",
+    horizontal_alignment = "CENTER",
+    number_format = "0.00"
+  )
+
+# Write data with built-in theme format
+ss |>
+  write_pretty_sheet(
+    data = iris,
+    sheet = "iris_fun",
+    theme = "fun"
+  )
+
+# Write data with custom format
 ss |>
   range_write_format(
-    data = mtcars, range = "A1",
+    data = mtcars, 
+    sheet = "mtcars2",
+    range = "A1",
     header_background_color = "#D9E1F2",
     conditional_formats = list(
       list(
@@ -31,8 +54,11 @@ ss |>
     )
   )
 
+# Add gradient
 range_add_gradient_format(
-  ss, range = "D2:D33",
+  ss, 
+  sheet = "mtcars2",
+  range = "D2:D33",
   gradient = cf_gradient(min_color = "white", max_color = "forestgreen")
 )
 
