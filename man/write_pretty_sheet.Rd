@@ -79,7 +79,10 @@ neither is available.
 
 Like \code{\link[=range_write_format]{range_write_format()}}, \code{sheet} doesn't need to already exist -- a
 missing sheet name is created first (sized to fit \code{data}) instead of
-erroring.
+erroring. And like it, \code{range = NULL} (the default) replaces the whole
+sheet: an existing sheet is resized to fit \code{data} exactly and its old
+data validation is removed, so nothing from an earlier write is left
+behind. Pass \code{range} to write into part of a sheet instead.
 }
 \examples{
 \dontrun{

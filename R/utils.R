@@ -26,8 +26,11 @@
 #' real error (there's no sensible "create position 5"), so it's left for
 #' `range_write()` itself to reject. `sheet = NULL` (the default sheet) is
 #' also left alone, since there's always at least one sheet to fall back
-#' to. An *existing* sheet is never resized -- only one this function
-#' itself just created.
+#' to. An *existing* sheet is only resized when `fit_existing = TRUE`,
+#' which `range_write_format()`/`write_pretty_sheet()` use when they're
+#' replacing a whole sheet (no `range`): shrinking it to the data drops any
+#' leftover rows/columns from a previous, larger write, the way
+#' `sheet_write()` does.
 #'
 #' @param ss A `sheets_id`.
 #' @param sheet Sheet name or position, as passed by the caller.
@@ -36,26 +39,47 @@
 #'   the API's own default size.
 #' @param col_names Logical; whether a header row is also being written,
 #'   so the new sheet gets one extra row beyond `nrow(data)`.
+#' @param fit_existing Logical; also size an already-existing sheet
+#'   (including `sheet = NULL` or a numeric position) to `data`.
 #' @return `ss`, invisibly.
 #' @keywords internal
 #' @noRd
-ensure_sheet_exists <- function(ss, sheet, data = NULL, col_names = TRUE) {
+ensure_sheet_exists <- function(ss, sheet, data = NULL, col_names = TRUE, fit_existing = FALSE) {
+  created <- FALSE
   if (is.character(sheet) && length(sheet) == 1) {
     existing <- cached_sheet_properties(ss)$name
     if (!(sheet %in% existing)) {
       googlesheets4::sheet_add(ss, sheet = sheet)
       forget_sheet_properties(ss)
+      created <- TRUE
+    }
+  }
 
-      if (!is.null(data)) {
-        n_row <- nrow(data) + if (isTRUE(col_names)) 1L else 0L
-        n_col <- ncol(data)
-        if (n_row > 0 && n_col > 0) {
-          googlesheets4::sheet_resize(ss, sheet = sheet, nrow = n_row, ncol = n_col, exact = TRUE)
-        }
-      }
+  if (!is.null(data) && (created || isTRUE(fit_existing))) {
+    n_row <- nrow(data) + if (isTRUE(col_names)) 1L else 0L
+    n_col <- ncol(data)
+    if (!created) {
+      # An existing sheet may have its header row frozen, and the Sheets API
+      # won't delete every unfrozen row -- keep at least one below it.
+      n_row <- max(n_row, 2L)
+    }
+    if (n_row > 0 && n_col > 0) {
+      googlesheets4::sheet_resize(ss, sheet = sheet, nrow = n_row, ncol = n_col, exact = TRUE)
     }
   }
   invisible(ss)
+}
+
+#' Request that removes all data validation (e.g. checkboxes) from a sheet
+#'
+#' Used when `range_write_format()`/`write_pretty_sheet()` replace a whole
+#' sheet, so checkboxes or dropdowns from a previous write don't linger on
+#' columns that now hold different data. Formatting is cleared separately.
+#'
+#' @keywords internal
+#' @noRd
+clear_sheet_validation_request <- function(ss, sheet) {
+  list(setDataValidation = list(range = resolve_grid_range(ss, sheet, NULL)))
 }
 
 #' Drop NULL elements from a list

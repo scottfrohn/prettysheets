@@ -309,6 +309,11 @@ validate_theme_border <- function(border) {
 #'   multiple lines instead of clipping to one. Default `FALSE`.
 #' @param freeze_header Logical; freeze row 1 via [sheet_freeze()].
 #'   Default `TRUE`.
+#' @param min_column_width Narrowest a column is sized to, in pixels.
+#'   Columns are sized to fit their header and values, but never narrower
+#'   than this. Default `100`. Set it to `0` to let short columns shrink to
+#'   fit their header (or values, if wider). URL and long-text columns keep
+#'   their fixed widths.
 #' @param conditional_formats A list of formatting calls to apply after
 #'   theming, each either `list(range = ..., rule = ..., format = ...)`
 #'   for a boolean rule (see [cf_cell_value()] and friends, [cf_format()])
@@ -333,12 +338,16 @@ gs_theme <- function(header = list(),
                       border = NULL,
                       wrap_long_text = FALSE,
                       freeze_header = TRUE,
-                      conditional_formats = list()) {
+                      conditional_formats = list(),
+                      min_column_width = 100) {
   if (!is.list(columns) || (length(columns) > 0 && is.null(names(columns)))) {
     cli::cli_abort("{.arg columns} must be a named list, e.g. {.code list(price = list(number_format = \"$#,##0.00\"))}.")
   }
   if (!is.list(conditional_formats)) {
     cli::cli_abort("{.arg conditional_formats} must be a list.")
+  }
+  if (!is.numeric(min_column_width) || length(min_column_width) != 1 || is.na(min_column_width) || min_column_width < 0) {
+    cli::cli_abort("{.arg min_column_width} must be a single number, 0 or more.")
   }
 
   structure(
@@ -349,7 +358,8 @@ gs_theme <- function(header = list(),
       border = validate_theme_border(border),
       wrap_long_text = isTRUE(wrap_long_text),
       freeze_header = isTRUE(freeze_header),
-      conditional_formats = conditional_formats
+      conditional_formats = conditional_formats,
+      min_column_width = min_column_width
     ),
     class = "prettysheets_theme"
   )
@@ -365,11 +375,12 @@ gs_theme <- function(header = list(),
 #' already had it, and `modify_theme(theme, columns = list(qty =
 #' list(bold = TRUE)))` adds (or overrides) just the `qty` entry without
 #' disturbing any other column override already in `theme`.
-#' `wrap_long_text`, `freeze_header`, and `conditional_formats` replace the
+#' `wrap_long_text`, `freeze_header`, `conditional_formats`, and
+#' `min_column_width` replace the
 #' corresponding part of `theme` outright when supplied.
 #'
 #' @param theme A `gs_theme()` object.
-#' @param header,banding,columns,border,wrap_long_text,freeze_header,conditional_formats
+#' @param header,banding,columns,border,wrap_long_text,freeze_header,conditional_formats,min_column_width
 #'   Same meaning as in [gs_theme()]. Omit (the default, `NULL`) to leave
 #'   that part of `theme` unchanged.
 #' @return A new `prettysheets_theme` object.
@@ -385,7 +396,8 @@ modify_theme <- function(theme,
                           border = NULL,
                           wrap_long_text = NULL,
                           freeze_header = NULL,
-                          conditional_formats = NULL) {
+                          conditional_formats = NULL,
+                          min_column_width = NULL) {
   if (!inherits(theme, "prettysheets_theme")) {
     cli::cli_abort("{.arg theme} must be a {.cls prettysheets_theme} object (see {.fn gs_theme}).")
   }
@@ -397,7 +409,8 @@ modify_theme <- function(theme,
     border = if (!is.null(border)) utils::modifyList(theme$border %||% .theme_border_defaults, border) else theme$border,
     wrap_long_text = if (!is.null(wrap_long_text)) wrap_long_text else theme$wrap_long_text,
     freeze_header = if (!is.null(freeze_header)) freeze_header else theme$freeze_header,
-    conditional_formats = if (!is.null(conditional_formats)) conditional_formats else theme$conditional_formats
+    conditional_formats = if (!is.null(conditional_formats)) conditional_formats else theme$conditional_formats,
+    min_column_width = min_column_width %||% theme$min_column_width %||% 100
   )
 }
 
@@ -410,6 +423,7 @@ print.prettysheets_theme <- function(x, ...) {
   cat("  columns: ", if (length(x$columns) == 0) "none (type-inferred defaults only)" else paste(names(x$columns), collapse = ", "), "\n", sep = "")
   cat("  wrap_long_text: ", x$wrap_long_text, "\n", sep = "")
   cat("  freeze_header:  ", x$freeze_header, "\n", sep = "")
+  cat("  min_column_width: ", x$min_column_width %||% 100, "px\n", sep = "")
   cat("  conditional_formats: ", length(x$conditional_formats), " rule(s)\n", sep = "")
   invisible(x)
 }
@@ -511,7 +525,11 @@ apply_gs_theme <- function(ss, sheet = NULL, data = NULL, theme) {
 
       width <- theme_fixed_width(types[[i]])
       if (is.null(width)) {
-        width <- theme_column_width(headers[i], theme_display_strings(data[[i]], types[[i]]))
+        width <- theme_column_width(
+        headers[i], theme_display_strings(data[[i]], types[[i]]),
+        # %||%: themes saved before min_column_width existed don't carry it.
+        min_width = theme$min_column_width %||% 100
+      )
       }
       send_or_queue(ss, set_column_width_request(grid_range$sheetId, i, width))
     }

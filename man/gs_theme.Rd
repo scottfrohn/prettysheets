@@ -11,7 +11,8 @@ gs_theme(
   border = NULL,
   wrap_long_text = FALSE,
   freeze_header = TRUE,
-  conditional_formats = list()
+  conditional_formats = list(),
+  min_column_width = 100
 )
 }
 \arguments{
@@ -52,6 +53,12 @@ or \code{list(range = ..., gradient = ...)} for a gradient rule (see
 in place of \code{range} to target columns by name, so the rule keeps
 applying to the right columns regardless of how many rows of data you
 write.}
+
+\item{min_column_width}{Narrowest a column is sized to, in pixels.
+Columns are sized to fit their header and values, but never narrower
+than this. Default \code{100}. Set it to \code{0} to let short columns shrink to
+fit their header (or values, if wider). URL and long-text columns keep
+their fixed widths.}
 }
 \value{
 A \code{prettysheets_theme} object.

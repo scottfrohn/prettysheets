@@ -75,6 +75,13 @@ existing formatting on write, which would otherwise immediately erase
 whatever this function had just applied.
 }
 \details{
+With \code{range = NULL} (the default) the whole sheet is replaced, like
+\code{googlesheets4::sheet_write()}: an existing sheet is resized to fit
+\code{data} exactly (dropping any leftover rows/columns from an earlier,
+larger write) and its old data validation (checkboxes, dropdowns) is
+removed. Pass \code{range} to write into part of a sheet and leave the rest
+alone.
+
 Unlike \code{range_write()} itself, \code{sheet} doesn't need to already exist --
 if it's a name not already in the spreadsheet, an empty (work)sheet by
 that name is added first (\code{range_write()} alone errors in this case,

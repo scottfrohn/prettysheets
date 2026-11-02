@@ -107,3 +107,33 @@ test_that("ensure_sheet_exists() skips resizing when there's nothing meaningful 
   expect_no_error(ensure_sheet_exists("fake", "combined", data = data.frame(), col_names = FALSE))
   expect_no_error(ensure_sheet_exists("fake", "combined", data = data.frame()))
 })
+
+test_that("ensure_sheet_exists(fit_existing = TRUE) sizes an existing sheet to the data", {
+  resized <- NULL
+  local_mocked_bindings(
+    sheet_properties = function(ss) data.frame(name = "combined"),
+    sheet_add = function(ss, sheet) cli::cli_abort("sheet_add() should not have been called"),
+    sheet_resize = function(ss, sheet, nrow, ncol, exact) {
+      resized <<- list(sheet = sheet, nrow = nrow, ncol = ncol, exact = exact)
+      invisible(ss)
+    },
+    .package = "googlesheets4"
+  )
+
+  ensure_sheet_exists("fake", "combined", data = data.frame(x = 1:3, y = 1:3), fit_existing = TRUE)
+  expect_equal(resized, list(sheet = "combined", nrow = 4, ncol = 2, exact = TRUE))
+})
+
+test_that("ensure_sheet_exists(fit_existing = TRUE) also sizes the default sheet, keeping a row below a frozen header", {
+  resized <- NULL
+  local_mocked_bindings(
+    sheet_resize = function(ss, sheet, nrow, ncol, exact) {
+      resized <<- list(sheet = sheet, nrow = nrow, ncol = ncol)
+      invisible(ss)
+    },
+    .package = "googlesheets4"
+  )
+
+  ensure_sheet_exists("fake", NULL, data = data.frame(x = integer(0)), fit_existing = TRUE)
+  expect_equal(resized, list(sheet = NULL, nrow = 2, ncol = 1))
+})

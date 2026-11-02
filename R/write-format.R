@@ -6,6 +6,13 @@
 #' existing formatting on write, which would otherwise immediately erase
 #' whatever this function had just applied.
 #'
+#' With `range = NULL` (the default) the whole sheet is replaced, like
+#' `googlesheets4::sheet_write()`: an existing sheet is resized to fit
+#' `data` exactly (dropping any leftover rows/columns from an earlier,
+#' larger write) and its old data validation (checkboxes, dropdowns) is
+#' removed. Pass `range` to write into part of a sheet and leave the rest
+#' alone.
+#'
 #' Unlike `range_write()` itself, `sheet` doesn't need to already exist --
 #' if it's a name not already in the spreadsheet, an empty (work)sheet by
 #' that name is added first (`range_write()` alone errors in this case,
@@ -50,7 +57,7 @@ range_write_format <- function(ss,
                                 freeze_header = TRUE,
                                 conditional_formats = list()) {
   ss <- googlesheets4::as_sheets_id(ss)
-  ensure_sheet_exists(ss, sheet, data = data, col_names = col_names)
+  ensure_sheet_exists(ss, sheet, data = data, col_names = col_names, fit_existing = is.null(range))
 
   googlesheets4::range_write(
     ss, data = data, sheet = sheet, range = range,
@@ -61,6 +68,10 @@ range_write_format <- function(ss,
   forget_sheet_properties(ss)
 
   run_batch({
+    if (is.null(range)) {
+      send_or_queue(ss, clear_sheet_validation_request(ss, sheet))
+    }
+
     if (isTRUE(col_names) && !is.null(header_bold)) {
       sheet_format_header(
         ss, sheet = sheet, row = 1,
@@ -111,7 +122,10 @@ range_write_format <- function(ss,
 #'
 #' Like [range_write_format()], `sheet` doesn't need to already exist -- a
 #' missing sheet name is created first (sized to fit `data`) instead of
-#' erroring.
+#' erroring. And like it, `range = NULL` (the default) replaces the whole
+#' sheet: an existing sheet is resized to fit `data` exactly and its old
+#' data validation is removed, so nothing from an earlier write is left
+#' behind. Pass `range` to write into part of a sheet instead.
 #'
 #' @inheritParams googlesheets4::range_write
 #' @param theme A [gs_theme()] object, a preset name string, or `NULL`
@@ -145,7 +159,7 @@ write_pretty_sheet <- function(ss,
     cli::cli_abort("{.arg theme} must be a {.cls prettysheets_theme} object (see {.fn gs_theme}), a preset name, or NULL.")
   }
 
-  ensure_sheet_exists(ss, sheet, data = data, col_names = col_names)
+  ensure_sheet_exists(ss, sheet, data = data, col_names = col_names, fit_existing = is.null(range))
 
   googlesheets4::range_write(
     ss, data = data, sheet = sheet, range = range,
@@ -155,9 +169,14 @@ write_pretty_sheet <- function(ss,
   # an enclosing batch.
   forget_sheet_properties(ss)
 
-  if (isTRUE(col_names)) {
-    apply_gs_theme(ss, sheet = sheet, data = data, theme = theme)
-  }
+  run_batch({
+    if (is.null(range)) {
+      send_or_queue(ss, clear_sheet_validation_request(ss, sheet))
+    }
+    if (isTRUE(col_names)) {
+      apply_gs_theme(ss, sheet = sheet, data = data, theme = theme)
+    }
+  })
 
   invisible(ss)
 }

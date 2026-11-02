@@ -113,11 +113,13 @@ test_that("write_pretty_sheet() accepts a preset name string in place of a theme
     .package = "googlesheets4"
   )
   local_mocked_bindings(
+    clear_sheet_validation_request = function(ss, sheet) list(),
+    apply_requests = function(ss, requests) invisible(ss),
     apply_gs_theme = function(ss, sheet, data, theme) {
       captured <<- theme
       invisible(ss)
     },
-    ensure_sheet_exists = function(ss, sheet, data = NULL, col_names = TRUE) invisible(ss)
+    ensure_sheet_exists = function(ss, sheet, data = NULL, col_names = TRUE, ...) invisible(ss)
   )
 
   write_pretty_sheet("fake", data = data.frame(x = 1), theme = "professional")
@@ -133,11 +135,13 @@ test_that("write_pretty_sheet() reuses a theme attached to data when theme isn't
     .package = "googlesheets4"
   )
   local_mocked_bindings(
+    clear_sheet_validation_request = function(ss, sheet) list(),
+    apply_requests = function(ss, requests) invisible(ss),
     apply_gs_theme = function(ss, sheet, data, theme) {
       captured <<- theme
       invisible(ss)
     },
-    ensure_sheet_exists = function(ss, sheet, data = NULL, col_names = TRUE) invisible(ss)
+    ensure_sheet_exists = function(ss, sheet, data = NULL, col_names = TRUE, ...) invisible(ss)
   )
 
   attached_theme <- gs_theme(header = list(background_color = "#123456"))
@@ -156,14 +160,34 @@ test_that("write_pretty_sheet() falls back to a plain default theme when nothing
     .package = "googlesheets4"
   )
   local_mocked_bindings(
+    clear_sheet_validation_request = function(ss, sheet) list(),
+    apply_requests = function(ss, requests) invisible(ss),
     apply_gs_theme = function(ss, sheet, data, theme) {
       captured <<- theme
       invisible(ss)
     },
-    ensure_sheet_exists = function(ss, sheet, data = NULL, col_names = TRUE) invisible(ss)
+    ensure_sheet_exists = function(ss, sheet, data = NULL, col_names = TRUE, ...) invisible(ss)
   )
 
   write_pretty_sheet("fake", data = data.frame(x = 1))
   expect_s3_class(captured, "prettysheets_theme")
   expect_equal(captured$header$background_color, "#F3F3F3")
+})
+
+test_that("min_column_width defaults to 100 and is validated", {
+  expect_equal(gs_theme()$min_column_width, 100)
+  expect_equal(gs_theme(min_column_width = 0)$min_column_width, 0)
+  expect_error(gs_theme(min_column_width = -1), "min_column_width")
+  expect_error(gs_theme(min_column_width = "narrow"), "min_column_width")
+})
+
+test_that("modify_theme() can change min_column_width and keeps it otherwise", {
+  base <- gs_theme(min_column_width = 0)
+  expect_equal(modify_theme(base, freeze_header = FALSE)$min_column_width, 0)
+  expect_equal(modify_theme(base, min_column_width = 60)$min_column_width, 60)
+})
+
+test_that("with min_column_width = 0, short columns are sized to their header", {
+  expect_equal(theme_column_width("p_wt", c("0.45", "0.91"), min_width = 0), 4L * 7L + 24L)
+  expect_equal(theme_column_width("p_wt", c("0.45", "0.91")), 100L)
 })

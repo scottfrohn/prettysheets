@@ -12,13 +12,14 @@ modify_theme(
   border = NULL,
   wrap_long_text = NULL,
   freeze_header = NULL,
-  conditional_formats = NULL
+  conditional_formats = NULL,
+  min_column_width = NULL
 )
 }
 \arguments{
 \item{theme}{A \code{gs_theme()} object.}
 
-\item{header, banding, columns, border, wrap_long_text, freeze_header, conditional_formats}{Same meaning as in \code{\link[=gs_theme]{gs_theme()}}. Omit (the default, \code{NULL}) to leave
+\item{header, banding, columns, border, wrap_long_text, freeze_header, conditional_formats, min_column_width}{Same meaning as in \code{\link[=gs_theme]{gs_theme()}}. Omit (the default, \code{NULL}) to leave
 that part of \code{theme} unchanged.}
 }
 \value{
@@ -31,7 +32,8 @@ corresponding part of \code{theme} (via \code{\link[utils:modifyList]{utils::mod
 replacing it outright, so e.g. \code{modify_theme(theme, banding = list(band2 = "lightyellow"))} only changes \code{band2}, leaving \code{band1} as \code{theme}
 already had it, and \code{modify_theme(theme, columns = list(qty = list(bold = TRUE)))} adds (or overrides) just the \code{qty} entry without
 disturbing any other column override already in \code{theme}.
-\code{wrap_long_text}, \code{freeze_header}, and \code{conditional_formats} replace the
+\code{wrap_long_text}, \code{freeze_header}, \code{conditional_formats}, and
+\code{min_column_width} replace the
 corresponding part of \code{theme} outright when supplied.
 }
 \examples{

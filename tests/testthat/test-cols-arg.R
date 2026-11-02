@@ -93,7 +93,11 @@ test_that("theme conditional_formats specs accept cols", {
     list(cols = "p_wt", rule = cf_cell_value("not between", c(0.2, 0.9)),
          format = cf_format(background_color = "#990000"))
   ))
-  local_mocked_bindings(range_write = function(...) invisible(NULL), .package = "googlesheets4")
+  local_mocked_bindings(
+    range_write = function(...) invisible(NULL),
+    sheet_resize = function(...) invisible(NULL),
+    .package = "googlesheets4"
+  )
   write_pretty_sheet("fake", data = df, sheet = "Sheet1", theme = theme)
   cf <- Filter(function(r) !is.null(r$addConditionalFormatRule), calls$requests)
   expect_length(cf, 1)
