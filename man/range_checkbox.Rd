@@ -5,9 +5,16 @@
 \alias{range_remove_checkbox}
 \title{Add or remove checkboxes in a range of cells}
 \usage{
-range_checkbox(ss, sheet = NULL, range, checked = NULL, unchecked = NULL)
+range_checkbox(
+  ss,
+  sheet = NULL,
+  range = NULL,
+  checked = NULL,
+  unchecked = NULL,
+  cols = NULL
+)
 
-range_remove_checkbox(ss, sheet = NULL, range)
+range_remove_checkbox(ss, sheet = NULL, range = NULL, cols = NULL)
 }
 \arguments{
 \item{ss}{Something that identifies a Google Sheet, processed through
@@ -21,12 +28,18 @@ visible sheet, or the sheet named in \code{range} if \code{range} is a
 \item{range}{\code{NULL} (whole sheet), an A1-style string (\code{"A1:D10"},
 \code{"B:B"}, \code{"2:5"}), a \code{cellranger} helper such as
 \code{\link[cellranger:cell_rows]{cellranger::cell_rows()}} or \code{\link[cellranger:cell_cols]{cellranger::cell_cols()}}, or \code{\link[=gs4_cols]{gs4_cols()}}
-to target one or more columns by header name.}
+to target one or more columns by header name. Leave \code{NULL} when using
+\code{cols}.}
 
 \item{checked, unchecked}{Optional custom values stored in the cell when the
 box is checked/unchecked (e.g. \code{"Yes"}/\code{"No"}). Leave both \code{NULL} (the
 default) to use \code{TRUE}/\code{FALSE}. If you set \code{unchecked}, you must also set
 \code{checked}. Only used by \code{range_checkbox()}.}
+
+\item{cols}{A character vector of column header names to target instead
+of \code{range} -- shorthand for \code{range = gs4_cols(cols)}. Selects the data
+rows below the header in each named column (header names are read from
+row 1 of the sheet). Supply \code{range} or \code{cols}, not both.}
 }
 \value{
 The input \code{ss}, as a \code{sheets_id}, invisibly.
@@ -34,7 +47,11 @@ The input \code{ss}, as a \code{sheets_id}, invisibly.
 \description{
 \code{range_checkbox()} turns every cell in \code{range} into a checkbox. Existing
 \code{TRUE}/\code{FALSE} values show as checked/unchecked boxes and blank cells
-become unchecked boxes. \code{range_remove_checkbox()} clears the range's data
+become unchecked boxes. With \code{cols}, that's every row below the header
+to the bottom of the sheet -- so any empty rows past your data get
+unchecked boxes too, unless the sheet is sized to the data (as
+\code{\link[=write_pretty_sheet]{write_pretty_sheet()}} and \code{\link[=range_write_format]{range_write_format()}} do when they create
+a new sheet). Use \code{range} to stop at a specific row. \code{range_remove_checkbox()} clears the range's data
 validation, turning the checkboxes back into plain cells (their values are
 kept).
 }
@@ -42,6 +59,7 @@ kept).
 \dontrun{
 ss <- googlesheets4::gs4_create("prettysheets-demo", sheets = mtcars)
 range_checkbox(ss, range = "L2:L33")
+range_checkbox(ss, cols = "am") # every data row of the "am" column
 range_checkbox(ss, range = "M2:M33", checked = "Yes", unchecked = "No")
 range_remove_checkbox(ss, range = "L2:M33")
 }

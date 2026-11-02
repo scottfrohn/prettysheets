@@ -20,7 +20,8 @@
 #' @param range `NULL` (whole sheet), an A1-style string (`"A1:D10"`,
 #'   `"B:B"`, `"2:5"`), a `cellranger` helper such as
 #'   [cellranger::cell_rows()] or [cellranger::cell_cols()], or [gs4_cols()]
-#'   to target one or more columns by header name.
+#'   to target one or more columns by header name. Leave `NULL` when using
+#'   `cols`.
 #' @param bold,italic,underline,strikethrough Logical.
 #' @param font_size Numeric point size.
 #' @param font_family Character, e.g. `"Arial"`.
@@ -61,6 +62,10 @@
 #'   or on whole-row references (`"2:5"`), since there's no header *row* to
 #'   exclude from a selection that already names its rows, or from a
 #'   selection of specific rows in the first place.
+#' @param cols A character vector of column header names to target instead
+#'   of `range` -- shorthand for `range = gs4_cols(cols)`. Selects the data
+#'   rows below the header in each named column (header names are read from
+#'   row 1 of the sheet). Supply `range` or `cols`, not both.
 #' @return The input `ss`, as a `sheets_id`, invisibly.
 #' @seealso Makes a `RepeatCellRequest`:
 #'   <https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/request#repeatcellrequest>
@@ -71,7 +76,8 @@
 #' range_format(ss, range = "A1:K1", bold = TRUE, background_color = "#D9E1F2")
 #' range_format(ss, range = "B2:B33", number_format = "0.0", horizontal_alignment = "RIGHT")
 #' range_format(ss, range = "A1:K1", clear_first = TRUE, bold = TRUE)
-#' range_format(ss, range = gs4_cols("mpg", "hp"), number_format = "0.0")
+#' range_format(ss, cols = c("mpg", "hp"), number_format = "0.0")
+#' range_format(ss, range = gs4_cols("mpg", "hp"), number_format = "0.0") # same thing
 #' range_format(ss, range = gs4_cols("mpg"), include_header = TRUE, bold = TRUE)
 #' range_format(ss, range = "B:B", number_format = "0.0") # skips row 1
 #' range_format(ss, range = "B:B", include_header = TRUE, number_format = "0.0") # row 1 too
@@ -95,9 +101,10 @@ range_format <- function(ss,
                           wrap_strategy = NULL,
                           link = NULL,
                           clear_first = FALSE,
-                          include_header = FALSE) {
+                          include_header = FALSE,
+                          cols = NULL) {
   ss <- googlesheets4::as_sheets_id(ss)
-  grid_ranges <- resolve_grid_ranges(ss, sheet, range, include_header = include_header)
+  grid_ranges <- resolve_target_ranges(ss, sheet, range, cols, include_header = include_header)
 
   built <- build_cell_format(
     bold = bold, italic = italic, underline = underline, strikethrough = strikethrough,
@@ -165,16 +172,17 @@ range_format <- function(ss,
 #' range_format_border(ss, range = "A1:K1")
 #' range_format_border(ss, range = "A1:K33", sides = "all", color = "gray80")
 #' range_format_border(ss, range = "A1:K33", sides = "all", style = "NONE")
-#' range_format_border(ss, range = gs4_cols("mpg", "hp"))
+#' range_format_border(ss, cols = c("mpg", "hp"))
 #' }
 range_format_border <- function(ss,
                                  sheet = NULL,
                                  range = NULL,
                                  sides = "outside",
                                  style = "SOLID",
-                                 color = "black") {
+                                 color = "black",
+                                 cols = NULL) {
   ss <- googlesheets4::as_sheets_id(ss)
-  grid_ranges <- resolve_grid_ranges(ss, sheet, range)
+  grid_ranges <- resolve_target_ranges(ss, sheet, range, cols)
 
   sides <- resolve_border_sides(sides)
 

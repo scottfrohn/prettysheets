@@ -117,7 +117,7 @@ test_that("resolve_grid_ranges passes an explicit include_header through for non
 
 test_that("resolve_grid_ranges expands a prettysheets_cols range into one GridRange per contiguous run", {
   local_mocked_bindings(
-    resolve_grid_range = function(ss, sheet, range) list(sheetId = 0, limits = range),
+    resolve_grid_range = function(ss, sheet, range, ...) list(sheetId = 0, limits = range),
     resolve_cols_header = function(ss, sheet, cols) names(mtcars)
   )
   out <- resolve_grid_ranges(ss = NULL, sheet = NULL, range = gs4_cols("mpg", "hp"))
@@ -126,7 +126,7 @@ test_that("resolve_grid_ranges expands a prettysheets_cols range into one GridRa
 
 test_that("resolve_grid_ranges passes include_header through to cols_to_cell_limits", {
   local_mocked_bindings(
-    resolve_grid_range = function(ss, sheet, range) list(sheetId = 0, limits = range),
+    resolve_grid_range = function(ss, sheet, range, ...) list(sheetId = 0, limits = range),
     resolve_cols_header = function(ss, sheet, cols) names(mtcars)
   )
   out <- resolve_grid_ranges(

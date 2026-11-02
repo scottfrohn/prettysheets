@@ -83,13 +83,19 @@ sheet_clear_format(ss, sheet = "cars") # reset everything, including banding/con
 
 ## Referencing columns by name
 
-`gs4_cols()` targets one or more columns by their header name instead of a
-column letter -- handy when you don't want to count columns by hand, and
-robust to a sheet's columns being reordered later.
+Every function that takes a `range` also takes `cols`: one or more column
+header names to target instead of a column letter -- handy when you don't
+want to count columns by hand, and robust to a sheet's columns being
+reordered later. `cols` selects the data rows below the header, and you
+don't need `range` when you use it.
 
 ```{r}
-range_format(ss, sheet = "cars", range = gs4_cols("mpg", "hp"), number_format = "0.0")
+range_format(ss, sheet = "cars", cols = c("mpg", "hp"), number_format = "0.0")
+range_checkbox(ss, sheet = "cars", cols = "am")
 ```
+
+`cols = c("mpg", "hp")` is shorthand for `range = gs4_cols("mpg", "hp")`,
+which still works too.
 
 If the named columns aren't contiguous, this expands into one `GridRange`
 per contiguous run under the hood; the header row itself is excluded by
@@ -103,7 +109,7 @@ Boolean rules are built with `cf_cell_value()` (or `cf_text_contains()`,
 
 ```{r}
 range_add_conditional_format(
-  ss, sheet = "cars", range = gs4_cols("mpg"),
+  ss, sheet = "cars", cols = "mpg",
   rule = cf_cell_value(">", 25),
   format = cf_format(bold = TRUE, background_color = "#F4CCCC")
 )
@@ -114,7 +120,7 @@ Gradient (color-scale) rules use `cf_gradient()` and
 
 ```{r}
 range_add_gradient_format(
-  ss, sheet = "cars", range = gs4_cols("hp"),
+  ss, sheet = "cars", cols = "hp",
   gradient = cf_gradient(min_color = "white", max_color = "forestgreen")
 )
 ```

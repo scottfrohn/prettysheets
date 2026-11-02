@@ -20,7 +20,7 @@ range_write_format(
 \arguments{
 \item{ss}{Something that identifies a Google Sheet:
 \itemize{
-\item its file id as a string or \code{\link[googledrive:drive_id]{drive_id}}
+\item its file id as a string or \code{\link[googledrive:as_id]{drive_id}}
 \item a URL from which we can recover the id
 \item a one-row \code{\link[googledrive:dribble]{dribble}}, which is how googledrive
 represents Drive files
@@ -61,7 +61,8 @@ Only applies if \code{col_names = TRUE}.}
 \item{conditional_formats}{A list of formatting calls to apply after
 writing, each itself a \code{list(range = ..., rule = ..., format = ...)} for
 a boolean rule, or \code{list(range = ..., gradient = ...)} for a gradient
-rule. Optional.}
+rule. Use \code{cols = ...} (a character vector of column names) in place of
+\code{range} to target columns by name. Optional.}
 }
 \value{
 The input \code{ss}, as a \code{sheets_id}, invisibly.

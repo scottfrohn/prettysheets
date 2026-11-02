@@ -44,7 +44,7 @@ gs4_cols <- function(..., data = NULL, header_row = 1) {
 #' Get the header names a `prettysheets_cols` object should be matched against
 #'
 #' Uses `cols$data` if supplied (no API call); otherwise reads the sheet's
-#' header row live.
+#' header row live (once per batch -- see `cached_header_row()`).
 #'
 #' @param cols A `prettysheets_cols` object (see [gs4_cols()]).
 #' @keywords internal
@@ -58,14 +58,7 @@ resolve_cols_header <- function(ss, sheet, cols) {
   # repair -- which by default *announces* the repair with a "New names:"
   # message. We immediately discard those placeholder names below (we only
   # want the row's actual values), so the message is just noise here.
-  header_row_data <- suppressMessages(googlesheets4::range_read(
-    ss,
-    sheet = sheet,
-    range = cellranger::cell_rows(cols$header_row),
-    col_names = FALSE,
-    col_types = "c"
-  ))
-  as.character(unlist(header_row_data[1, ], use.names = FALSE))
+  cached_header_row(ss, sheet, cols$header_row)
 }
 
 #' Match a `prettysheets_cols` object's names against a header, and group the
@@ -145,4 +138,39 @@ resolve_grid_ranges <- function(ss, sheet = NULL, range = NULL, include_header) 
   header <- resolve_cols_header(ss, sheet, range)
   limits_list <- cols_to_cell_limits(range, header, include_header = include_header)
   lapply(limits_list, function(limits) resolve_grid_range(ss, sheet, limits))
+}
+
+#' Resolve a function's `range`/`cols` arguments into one or more
+#' `GridRange`s
+#'
+#' Every `prettysheets` function that targets cells takes both `range` and
+#' `cols`; this is the one place that decides between them. `cols` is a
+#' character vector of header names, shorthand for `range = gs4_cols(cols)`.
+#'
+#' @inheritParams resolve_grid_ranges
+#' @param cols `NULL`, or a character vector of column header names.
+#' @param required Logical; error if neither `range` nor `cols` was given
+#'   (for functions where "the whole sheet" isn't a sensible default, like
+#'   [range_merge()]).
+#' @keywords internal
+#' @noRd
+resolve_target_ranges <- function(ss, sheet = NULL, range = NULL, cols = NULL,
+                                  include_header, required = FALSE) {
+  if (!is.null(cols)) {
+    if (!is.null(range)) {
+      cli::cli_abort("Supply {.arg range} or {.arg cols}, not both.")
+    }
+    if (!is.character(cols) || length(cols) == 0) {
+      cli::cli_abort("{.arg cols} must be a character vector of column names.")
+    }
+    range <- gs4_cols(cols)
+  } else if (is.null(range) && isTRUE(required)) {
+    cli::cli_abort("Supply {.arg range} or {.arg cols}.")
+  }
+
+  if (missing(include_header)) {
+    resolve_grid_ranges(ss, sheet, range)
+  } else {
+    resolve_grid_ranges(ss, sheet, range, include_header = include_header)
+  }
 }

@@ -23,7 +23,8 @@ range_format(
   wrap_strategy = NULL,
   link = NULL,
   clear_first = FALSE,
-  include_header = FALSE
+  include_header = FALSE,
+  cols = NULL
 )
 }
 \arguments{
@@ -38,7 +39,8 @@ visible sheet, or the sheet named in \code{range} if \code{range} is a
 \item{range}{\code{NULL} (whole sheet), an A1-style string (\code{"A1:D10"},
 \code{"B:B"}, \code{"2:5"}), a \code{cellranger} helper such as
 \code{\link[cellranger:cell_rows]{cellranger::cell_rows()}} or \code{\link[cellranger:cell_cols]{cellranger::cell_cols()}}, or \code{\link[=gs4_cols]{gs4_cols()}}
-to target one or more columns by header name.}
+to target one or more columns by header name. Leave \code{NULL} when using
+\code{cols}.}
 
 \item{bold, italic, underline, strikethrough}{Logical.}
 
@@ -91,6 +93,11 @@ on ranges that already specify explicit rows (\code{"B2:B33"}, \code{"A1:D10"})
 or on whole-row references (\code{"2:5"}), since there's no header \emph{row} to
 exclude from a selection that already names its rows, or from a
 selection of specific rows in the first place.}
+
+\item{cols}{A character vector of column header names to target instead
+of \code{range} -- shorthand for \code{range = gs4_cols(cols)}. Selects the data
+rows below the header in each named column (header names are read from
+row 1 of the sheet). Supply \code{range} or \code{cols}, not both.}
 }
 \value{
 The input \code{ss}, as a \code{sheets_id}, invisibly.
@@ -114,7 +121,8 @@ ss <- googlesheets4::gs4_create("prettysheets-demo", sheets = mtcars)
 range_format(ss, range = "A1:K1", bold = TRUE, background_color = "#D9E1F2")
 range_format(ss, range = "B2:B33", number_format = "0.0", horizontal_alignment = "RIGHT")
 range_format(ss, range = "A1:K1", clear_first = TRUE, bold = TRUE)
-range_format(ss, range = gs4_cols("mpg", "hp"), number_format = "0.0")
+range_format(ss, cols = c("mpg", "hp"), number_format = "0.0")
+range_format(ss, range = gs4_cols("mpg", "hp"), number_format = "0.0") # same thing
 range_format(ss, range = gs4_cols("mpg"), include_header = TRUE, bold = TRUE)
 range_format(ss, range = "B:B", number_format = "0.0") # skips row 1
 range_format(ss, range = "B:B", include_header = TRUE, number_format = "0.0") # row 1 too

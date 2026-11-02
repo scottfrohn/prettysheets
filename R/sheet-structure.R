@@ -175,7 +175,8 @@ find_conditional_format_indices <- function(ss, grid_range) {
 #'
 #' @inheritParams range_format
 #' @param range `NULL` (the default) clears the whole sheet. Pass an A1
-#'   string or `cellranger` helper to clear only that range instead.
+#'   string or `cellranger` helper to clear only that range instead, or use
+#'   `cols`.
 #' @return The input `ss`, as a `sheets_id`, invisibly.
 #' @seealso Makes a `RepeatCellRequest`:
 #'   <https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/request#repeatcellrequest>
@@ -185,24 +186,28 @@ find_conditional_format_indices <- function(ss, grid_range) {
 #' ss <- googlesheets4::gs4_create("prettysheets-demo", sheets = mtcars)
 #' sheet_clear_format(ss)
 #' sheet_clear_format(ss, range = "A1:K1")
+#' sheet_clear_format(ss, cols = c("mpg", "hp"))
 #' }
-sheet_clear_format <- function(ss, sheet = NULL, range = NULL) {
+sheet_clear_format <- function(ss, sheet = NULL, range = NULL, cols = NULL) {
   ss <- googlesheets4::as_sheets_id(ss)
-  grid_range <- resolve_grid_range(ss, sheet, range)
-  send_or_queue(ss, clear_format_request(grid_range))
+  grid_ranges <- resolve_target_ranges(ss, sheet, range, cols)
 
-  banded_ids <- find_banded_range_ids(ss, grid_range)
-  for (id in banded_ids) {
-    send_or_queue(ss, list(deleteBanding = list(bandedRangeId = id)))
-  }
+  for (grid_range in grid_ranges) {
+    send_or_queue(ss, clear_format_request(grid_range))
 
-  # Descending order (see find_conditional_format_indices()): deleting the
-  # highest index first keeps every remaining index in this vector valid.
-  cf_indices <- find_conditional_format_indices(ss, grid_range)
-  for (i in cf_indices) {
-    send_or_queue(ss, list(
-      deleteConditionalFormatRule = list(sheetId = grid_range$sheetId, index = as.integer(i))
-    ))
+    banded_ids <- find_banded_range_ids(ss, grid_range)
+    for (id in banded_ids) {
+      send_or_queue(ss, list(deleteBanding = list(bandedRangeId = id)))
+    }
+
+    # Descending order (see find_conditional_format_indices()): deleting the
+    # highest index first keeps every remaining index in this vector valid.
+    cf_indices <- find_conditional_format_indices(ss, grid_range)
+    for (i in cf_indices) {
+      send_or_queue(ss, list(
+        deleteConditionalFormatRule = list(sheetId = grid_range$sheetId, index = as.integer(i))
+      ))
+    }
   }
 
   invisible(ss)
@@ -288,35 +293,43 @@ sheet_format_tabcolor <- function(ss, sheet = NULL, color = NULL) {
 #' @seealso Makes a `MergeCellsRequest`/`UnmergeCellsRequest`:
 #'   <https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/request#mergecellsrequest>
 #' @export
-range_merge <- function(ss, sheet = NULL, range, type = c("all", "columns", "rows")) {
+range_merge <- function(ss, sheet = NULL, range = NULL, type = c("all", "columns", "rows"), cols = NULL) {
   type <- match.arg(type)
   ss <- googlesheets4::as_sheets_id(ss)
-  grid_range <- resolve_grid_range(ss, sheet, range)
+  grid_ranges <- resolve_target_ranges(ss, sheet, range, cols, required = TRUE)
 
   merge_type <- switch(type,
     all = "MERGE_ALL",
     columns = "MERGE_COLUMNS",
     rows = "MERGE_ROWS"
   )
-  request <- list(mergeCells = list(range = grid_range, mergeType = merge_type))
-  send_or_queue(ss, request)
+  for (grid_range in grid_ranges) {
+    send_or_queue(ss, list(mergeCells = list(range = grid_range, mergeType = merge_type)))
+  }
+  invisible(ss)
 }
 
 #' @rdname range_merge
 #' @export
-range_unmerge <- function(ss, sheet = NULL, range) {
+range_unmerge <- function(ss, sheet = NULL, range = NULL, cols = NULL) {
   ss <- googlesheets4::as_sheets_id(ss)
-  grid_range <- resolve_grid_range(ss, sheet, range)
+  grid_ranges <- resolve_target_ranges(ss, sheet, range, cols, required = TRUE)
 
-  request <- list(unmergeCells = list(range = grid_range))
-  send_or_queue(ss, request)
+  for (grid_range in grid_ranges) {
+    send_or_queue(ss, list(unmergeCells = list(range = grid_range)))
+  }
+  invisible(ss)
 }
 
 #' Add or remove checkboxes in a range of cells
 #'
 #' `range_checkbox()` turns every cell in `range` into a checkbox. Existing
 #' `TRUE`/`FALSE` values show as checked/unchecked boxes and blank cells
-#' become unchecked boxes. `range_remove_checkbox()` clears the range's data
+#' become unchecked boxes. With `cols`, that's every row below the header
+#' to the bottom of the sheet -- so any empty rows past your data get
+#' unchecked boxes too, unless the sheet is sized to the data (as
+#' [write_pretty_sheet()] and [range_write_format()] do when they create
+#' a new sheet). Use `range` to stop at a specific row. `range_remove_checkbox()` clears the range's data
 #' validation, turning the checkboxes back into plain cells (their values are
 #' kept).
 #'
@@ -333,15 +346,16 @@ range_unmerge <- function(ss, sheet = NULL, range) {
 #' \dontrun{
 #' ss <- googlesheets4::gs4_create("prettysheets-demo", sheets = mtcars)
 #' range_checkbox(ss, range = "L2:L33")
+#' range_checkbox(ss, cols = "am") # every data row of the "am" column
 #' range_checkbox(ss, range = "M2:M33", checked = "Yes", unchecked = "No")
 #' range_remove_checkbox(ss, range = "L2:M33")
 #' }
-range_checkbox <- function(ss, sheet = NULL, range, checked = NULL, unchecked = NULL) {
+range_checkbox <- function(ss, sheet = NULL, range = NULL, checked = NULL, unchecked = NULL, cols = NULL) {
   if (is.null(checked) && !is.null(unchecked)) {
     cli::cli_abort("{.arg unchecked} can only be set together with {.arg checked}.")
   }
   ss <- googlesheets4::as_sheets_id(ss)
-  grid_range <- resolve_grid_range(ss, sheet, range)
+  grid_ranges <- resolve_target_ranges(ss, sheet, range, cols, required = TRUE)
 
   values <- lapply(drop_nulls(list(checked, unchecked)), function(v) {
     list(userEnteredValue = as.character(v))
@@ -350,19 +364,23 @@ range_checkbox <- function(ss, sheet = NULL, range, checked = NULL, unchecked = 
   if (length(values) > 0) {
     condition$values <- values
   }
-  request <- list(setDataValidation = list(
-    range = grid_range,
-    rule = list(condition = condition, strict = TRUE)
-  ))
-  send_or_queue(ss, request)
+  for (grid_range in grid_ranges) {
+    send_or_queue(ss, list(setDataValidation = list(
+      range = grid_range,
+      rule = list(condition = condition, strict = TRUE)
+    )))
+  }
+  invisible(ss)
 }
 
 #' @rdname range_checkbox
 #' @export
-range_remove_checkbox <- function(ss, sheet = NULL, range) {
+range_remove_checkbox <- function(ss, sheet = NULL, range = NULL, cols = NULL) {
   ss <- googlesheets4::as_sheets_id(ss)
-  grid_range <- resolve_grid_range(ss, sheet, range)
+  grid_ranges <- resolve_target_ranges(ss, sheet, range, cols, required = TRUE)
 
-  request <- list(setDataValidation = list(range = grid_range))
-  send_or_queue(ss, request)
+  for (grid_range in grid_ranges) {
+    send_or_queue(ss, list(setDataValidation = list(range = grid_range)))
+  }
+  invisible(ss)
 }

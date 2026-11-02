@@ -5,18 +5,19 @@
 #' pass the result straight into [range_add_conditional_format()]'s `rule`
 #' argument rather than hand-writing nested lists.
 #'
-#' @param operator One of `">"`, `">="`, `"<"`, `"<="`, `"=="`, `"!="`, or
-#'   `"between"`. Raw Sheets API `ConditionType` enum strings (e.g.
+#' @param operator One of `">"`, `">="`, `"<"`, `"<="`, `"=="`, `"!="`,
+#'   `"between"`, or `"not between"` (both bounds inclusive). Raw Sheets API `ConditionType` enum strings (e.g.
 #'   `"NUMBER_GREATER"`) are also accepted, in case you need a condition type
 #'   this wrapper doesn't have a shorthand for.
-#' @param value For most operators, a single number. For `"between"`, a
-#'   length-2 vector giving the low and high bounds.
+#' @param value For most operators, a single number. For `"between"` and
+#'   `"not between"`, a length-2 vector giving the low and high bounds.
 #' @return A list suitable as the `rule` argument of
 #'   [range_add_conditional_format()].
 #' @export
 #' @examples
 #' cf_cell_value(">", 100)
 #' cf_cell_value("between", c(10, 20))
+#' cf_cell_value("not between", c(0.2, 0.9)) # below 0.2 or above 0.9
 cf_cell_value <- function(operator, value) {
   op_map <- c(
     ">" = "NUMBER_GREATER",
@@ -25,13 +26,14 @@ cf_cell_value <- function(operator, value) {
     "<=" = "NUMBER_LESS_THAN_EQ",
     "==" = "NUMBER_EQ",
     "!=" = "NUMBER_NOT_EQ",
-    "between" = "NUMBER_BETWEEN"
+    "between" = "NUMBER_BETWEEN",
+    "not between" = "NUMBER_NOT_BETWEEN"
   )
   condition_type <- if (operator %in% names(op_map)) op_map[[operator]] else operator
 
-  values <- if (condition_type == "NUMBER_BETWEEN") {
+  values <- if (condition_type %in% c("NUMBER_BETWEEN", "NUMBER_NOT_BETWEEN")) {
     if (length(value) != 2) {
-      cli::cli_abort("{.arg value} must have length 2 (low, high) when {.arg operator} is {.val between}.")
+      cli::cli_abort("{.arg value} must have length 2 (low, high) when {.arg operator} is {.val {operator}}.")
     }
     lapply(value, function(v) list(userEnteredValue = as.character(v)))
   } else {
@@ -120,12 +122,12 @@ cf_format <- function(bold = NULL,
 #'   format = cf_format(background_color = "#F4CCCC")
 #' )
 #' range_add_conditional_format(
-#'   ss, range = gs4_cols("score"),
+#'   ss, cols = "score",
 #'   rule = cf_cell_value(">", 90),
 #'   format = cf_format(bold = TRUE, background_color = "#F4CCCC")
 #' )
 #' }
-range_add_conditional_format <- function(ss, sheet = NULL, range, rule, format, index = 0) {
+range_add_conditional_format <- function(ss, sheet = NULL, range = NULL, rule, format, index = 0, cols = NULL) {
   ss <- googlesheets4::as_sheets_id(ss)
   # resolve_grid_ranges() (plural), not resolve_grid_range() -- range can be
   # a gs4_cols() selection, which may expand into more than one GridRange
@@ -133,7 +135,7 @@ range_add_conditional_format <- function(ss, sheet = NULL, range, rule, format, 
   # ConditionalFormatRule's `ranges` accepts a list of GridRanges, so every
   # matched range is folded into one rule/one request rather than one rule
   # per range.
-  grid_ranges <- resolve_grid_ranges(ss, sheet, range)
+  grid_ranges <- resolve_target_ranges(ss, sheet, range, cols, required = TRUE)
 
   request <- list(
     addConditionalFormatRule = list(
@@ -206,12 +208,12 @@ cf_gradient <- function(min_color,
 #'   gradient = cf_gradient(min_color = "white", max_color = "forestgreen")
 #' )
 #' }
-range_add_gradient_format <- function(ss, sheet = NULL, range, gradient, index = 0) {
+range_add_gradient_format <- function(ss, sheet = NULL, range = NULL, gradient, index = 0, cols = NULL) {
   ss <- googlesheets4::as_sheets_id(ss)
   # See range_add_conditional_format() -- resolve_grid_ranges() (plural) so
   # a gs4_cols() selection (possibly several contiguous runs) is supported,
   # all folded into this one rule's `ranges` list.
-  grid_ranges <- resolve_grid_ranges(ss, sheet, range)
+  grid_ranges <- resolve_target_ranges(ss, sheet, range, cols, required = TRUE)
 
   request <- list(
     addConditionalFormatRule = list(

@@ -48,9 +48,10 @@ Default \code{TRUE}.}
 theming, each either \code{list(range = ..., rule = ..., format = ...)}
 for a boolean rule (see \code{\link[=cf_cell_value]{cf_cell_value()}} and friends, \code{\link[=cf_format]{cf_format()}})
 or \code{list(range = ..., gradient = ...)} for a gradient rule (see
-\code{\link[=cf_gradient]{cf_gradient()}}). \code{range} is commonly a \code{\link[=gs4_cols]{gs4_cols()}} selection, so the
-rule keeps applying to the right columns regardless of how many rows
-of data you write.}
+\code{\link[=cf_gradient]{cf_gradient()}}). Use \code{cols = ...} (a character vector of column names)
+in place of \code{range} to target columns by name, so the rule keeps
+applying to the right columns regardless of how many rows of data you
+write.}
 }
 \value{
 A \code{prettysheets_theme} object.

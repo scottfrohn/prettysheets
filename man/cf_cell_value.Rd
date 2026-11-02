@@ -22,13 +22,13 @@ cf_blank()
 cf_not_blank()
 }
 \arguments{
-\item{operator}{One of \code{">"}, \code{">="}, \code{"<"}, \code{"<="}, \code{"=="}, \code{"!="}, or
-\code{"between"}. Raw Sheets API \code{ConditionType} enum strings (e.g.
+\item{operator}{One of \code{">"}, \code{">="}, \code{"<"}, \code{"<="}, \code{"=="}, \code{"!="},
+\code{"between"}, or \code{"not between"} (both bounds inclusive). Raw Sheets API \code{ConditionType} enum strings (e.g.
 \code{"NUMBER_GREATER"}) are also accepted, in case you need a condition type
 this wrapper doesn't have a shorthand for.}
 
-\item{value}{For most operators, a single number. For \code{"between"}, a
-length-2 vector giving the low and high bounds.}
+\item{value}{For most operators, a single number. For \code{"between"} and
+\code{"not between"}, a length-2 vector giving the low and high bounds.}
 
 \item{text}{Text to match.}
 
@@ -48,4 +48,5 @@ argument rather than hand-writing nested lists.
 \examples{
 cf_cell_value(">", 100)
 cf_cell_value("between", c(10, 20))
+cf_cell_value("not between", c(0.2, 0.9)) # below 0.2 or above 0.9
 }

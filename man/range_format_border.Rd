@@ -10,7 +10,8 @@ range_format_border(
   range = NULL,
   sides = "outside",
   style = "SOLID",
-  color = "black"
+  color = "black",
+  cols = NULL
 )
 }
 \arguments{
@@ -25,7 +26,8 @@ visible sheet, or the sheet named in \code{range} if \code{range} is a
 \item{range}{\code{NULL} (whole sheet), an A1-style string (\code{"A1:D10"},
 \code{"B:B"}, \code{"2:5"}), a \code{cellranger} helper such as
 \code{\link[cellranger:cell_rows]{cellranger::cell_rows()}} or \code{\link[cellranger:cell_cols]{cellranger::cell_cols()}}, or \code{\link[=gs4_cols]{gs4_cols()}}
-to target one or more columns by header name.}
+to target one or more columns by header name. Leave \code{NULL} when using
+\code{cols}.}
 
 \item{sides}{Which sides to draw, any combination of:
 \describe{
@@ -50,6 +52,11 @@ same range.}
 
 \item{color}{Border color: hex string, named R color, or \link{gs4_palette}
 name (converted via \code{\link[=gs4_color]{gs4_color()}}). Ignored when \code{style = "NONE"}.}
+
+\item{cols}{A character vector of column header names to target instead
+of \code{range} -- shorthand for \code{range = gs4_cols(cols)}. Selects the data
+rows below the header in each named column (header names are read from
+row 1 of the sheet). Supply \code{range} or \code{cols}, not both.}
 }
 \value{
 The input \code{ss}, as a \code{sheets_id}, invisibly.
@@ -63,7 +70,7 @@ ss <- googlesheets4::gs4_create("prettysheets-demo", sheets = mtcars)
 range_format_border(ss, range = "A1:K1")
 range_format_border(ss, range = "A1:K33", sides = "all", color = "gray80")
 range_format_border(ss, range = "A1:K33", sides = "all", style = "NONE")
-range_format_border(ss, range = gs4_cols("mpg", "hp"))
+range_format_border(ss, cols = c("mpg", "hp"))
 }
 }
 \seealso{

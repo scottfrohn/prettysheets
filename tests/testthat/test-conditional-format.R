@@ -123,3 +123,10 @@ test_that("range_add_gradient_format() also resolves a gs4_cols() range into one
   expect_length(rule$ranges, 2)
   expect_equal(rule$gradientRule, gradient)
 })
+
+test_that("cf_cell_value supports 'not between' with exactly 2 values", {
+  expect_error(cf_cell_value("not between", 5), "length 2")
+  out <- cf_cell_value("not between", c(0.2, 0.9))
+  expect_equal(out$type, "NUMBER_NOT_BETWEEN")
+  expect_equal(out$values, list(list(userEnteredValue = "0.2"), list(userEnteredValue = "0.9")))
+})

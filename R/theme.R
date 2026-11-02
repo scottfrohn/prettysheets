@@ -313,9 +313,10 @@ validate_theme_border <- function(border) {
 #'   theming, each either `list(range = ..., rule = ..., format = ...)`
 #'   for a boolean rule (see [cf_cell_value()] and friends, [cf_format()])
 #'   or `list(range = ..., gradient = ...)` for a gradient rule (see
-#'   [cf_gradient()]). `range` is commonly a [gs4_cols()] selection, so the
-#'   rule keeps applying to the right columns regardless of how many rows
-#'   of data you write.
+#'   [cf_gradient()]). Use `cols = ...` (a character vector of column names)
+#'   in place of `range` to target columns by name, so the rule keeps
+#'   applying to the right columns regardless of how many rows of data you
+#'   write.
 #' @return A `prettysheets_theme` object.
 #' @export
 #' @examples
@@ -524,10 +525,10 @@ apply_gs_theme <- function(ss, sheet = NULL, data = NULL, theme) {
 
     for (spec in theme$conditional_formats) {
       if (!is.null(spec$gradient)) {
-        range_add_gradient_format(ss, sheet = sheet, range = spec$range, gradient = spec$gradient)
+        range_add_gradient_format(ss, sheet = sheet, range = spec$range, cols = spec$cols, gradient = spec$gradient)
       } else {
         range_add_conditional_format(
-          ss, sheet = sheet, range = spec$range, rule = spec$rule, format = spec$format
+          ss, sheet = sheet, range = spec$range, cols = spec$cols, rule = spec$rule, format = spec$format
         )
       }
     }

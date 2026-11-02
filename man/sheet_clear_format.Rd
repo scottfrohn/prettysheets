@@ -4,7 +4,7 @@
 \alias{sheet_clear_format}
 \title{Clear all cell formatting for a sheet, or a range within it}
 \usage{
-sheet_clear_format(ss, sheet = NULL, range = NULL)
+sheet_clear_format(ss, sheet = NULL, range = NULL, cols = NULL)
 }
 \arguments{
 \item{ss}{Something that identifies a Google Sheet, processed through
@@ -16,7 +16,13 @@ visible sheet, or the sheet named in \code{range} if \code{range} is a
 \code{cell_limits} object built from \code{"SheetName!A1:B2"}.}
 
 \item{range}{\code{NULL} (the default) clears the whole sheet. Pass an A1
-string or \code{cellranger} helper to clear only that range instead.}
+string or \code{cellranger} helper to clear only that range instead, or use
+\code{cols}.}
+
+\item{cols}{A character vector of column header names to target instead
+of \code{range} -- shorthand for \code{range = gs4_cols(cols)}. Selects the data
+rows below the header in each named column (header names are read from
+row 1 of the sheet). Supply \code{range} or \code{cols}, not both.}
 }
 \value{
 The input \code{ss}, as a \code{sheets_id}, invisibly.
@@ -40,6 +46,7 @@ affect borders — a separate property again; see \code{\link[=range_format_bord
 ss <- googlesheets4::gs4_create("prettysheets-demo", sheets = mtcars)
 sheet_clear_format(ss)
 sheet_clear_format(ss, range = "A1:K1")
+sheet_clear_format(ss, cols = c("mpg", "hp"))
 }
 }
 \seealso{

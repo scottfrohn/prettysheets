@@ -4,7 +4,15 @@
 \alias{range_add_conditional_format}
 \title{Add a boolean conditional-format rule to a range}
 \usage{
-range_add_conditional_format(ss, sheet = NULL, range, rule, format, index = 0)
+range_add_conditional_format(
+  ss,
+  sheet = NULL,
+  range = NULL,
+  rule,
+  format,
+  index = 0,
+  cols = NULL
+)
 }
 \arguments{
 \item{ss}{Something that identifies a Google Sheet, processed through
@@ -18,7 +26,8 @@ visible sheet, or the sheet named in \code{range} if \code{range} is a
 \item{range}{\code{NULL} (whole sheet), an A1-style string (\code{"A1:D10"},
 \code{"B:B"}, \code{"2:5"}), a \code{cellranger} helper such as
 \code{\link[cellranger:cell_rows]{cellranger::cell_rows()}} or \code{\link[cellranger:cell_cols]{cellranger::cell_cols()}}, or \code{\link[=gs4_cols]{gs4_cols()}}
-to target one or more columns by header name.}
+to target one or more columns by header name. Leave \code{NULL} when using
+\code{cols}.}
 
 \item{rule}{A condition built with \code{\link[=cf_cell_value]{cf_cell_value()}}, \code{\link[=cf_text_contains]{cf_text_contains()}},
 \code{\link[=cf_text_eq]{cf_text_eq()}}, \code{\link[=cf_custom_formula]{cf_custom_formula()}}, \code{\link[=cf_blank]{cf_blank()}}, or \code{\link[=cf_not_blank]{cf_not_blank()}}.}
@@ -28,6 +37,11 @@ match \code{rule}.}
 
 \item{index}{Rule priority; \code{0} (the default) puts the new rule first,
 i.e. highest priority.}
+
+\item{cols}{A character vector of column header names to target instead
+of \code{range} -- shorthand for \code{range = gs4_cols(cols)}. Selects the data
+rows below the header in each named column (header names are read from
+row 1 of the sheet). Supply \code{range} or \code{cols}, not both.}
 }
 \value{
 The input \code{ss}, as a \code{sheets_id}, invisibly.
@@ -43,7 +57,7 @@ range_add_conditional_format(
   format = cf_format(background_color = "#F4CCCC")
 )
 range_add_conditional_format(
-  ss, range = gs4_cols("score"),
+  ss, cols = "score",
   rule = cf_cell_value(">", 90),
   format = cf_format(bold = TRUE, background_color = "#F4CCCC")
 )

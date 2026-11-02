@@ -93,10 +93,12 @@ run_batch <- function(code, allow_empty = TRUE) {
   .prettysheets_env$queue <- list()
   .prettysheets_env$ss <- NULL
   .prettysheets_env$sheet_props <- list()
+  .prettysheets_env$headers <- list()
   on.exit({
     .prettysheets_env$collecting <- FALSE
     .prettysheets_env$queue <- list()
     .prettysheets_env$sheet_props <- list()
+    .prettysheets_env$headers <- list()
   })
 
   force(code)
@@ -118,6 +120,7 @@ run_batch <- function(code, allow_empty = TRUE) {
 .prettysheets_env$queue <- list()
 .prettysheets_env$ss <- NULL
 .prettysheets_env$sheet_props <- list()
+.prettysheets_env$headers <- list()
 
 #' Queue or immediately send a request, depending on whether we're inside
 #' [prettysheets_batch()]
@@ -140,7 +143,8 @@ send_or_queue <- function(ss, request) {
 #' the result is cached until the batch ends, so a block of calls against
 #' the same spreadsheet doesn't re-read its sheet list every time. Call
 #' `forget_sheet_properties()` after anything that adds, removes, or renames
-#' a sheet.
+#' a sheet -- it also forgets any cached header rows (see
+#' `cached_header_row()`), since writing new data can change those.
 #'
 #' @param ss A `sheets_id`.
 #' @keywords internal
@@ -161,5 +165,50 @@ cached_sheet_properties <- function(ss) {
 #' @noRd
 forget_sheet_properties <- function(ss) {
   .prettysheets_env$sheet_props[[as.character(ss)]] <- NULL
+  .prettysheets_env$headers[[as.character(ss)]] <- NULL
   invisible(ss)
+}
+
+#' A sheet's header row (as a character vector), read once per batch
+#'
+#' Used to match [gs4_cols()]/`cols` names to column positions. Like
+#' `cached_sheet_properties()`, this reads live outside a batch and caches
+#' inside one, keyed by spreadsheet, sheet, and header row.
+#'
+#' @param ss A `sheets_id`.
+#' @param sheet Sheet name or position, as passed by the caller.
+#' @param header_row Row number of the header.
+#' @keywords internal
+#' @noRd
+cached_header_row <- function(ss, sheet, header_row) {
+  read_header <- function() {
+    # col_names = FALSE means googlesheets4 has no real header to assign, so it
+    # falls back to placeholder names ("...1", "...2", ...) via tibble's name
+    # repair -- which by default *announces* the repair with a "New names:"
+    # message. We immediately discard those placeholder names below (we only
+    # want the row's actual values), so the message is just noise here.
+    header_row_data <- suppressMessages(googlesheets4::range_read(
+      ss,
+      sheet = sheet,
+      range = cellranger::cell_rows(header_row),
+      col_names = FALSE,
+      col_types = "c"
+    ))
+    as.character(unlist(header_row_data[1, ], use.names = FALSE))
+  }
+  if (!isTRUE(.prettysheets_env$collecting)) {
+    return(read_header())
+  }
+
+  ss_key <- as.character(ss)
+  key <- paste(if (is.null(sheet)) "" else sheet, header_row, sep = "|")
+  cached <- .prettysheets_env$headers[[ss_key]][[key]]
+  if (is.null(cached)) {
+    cached <- read_header()
+    if (is.null(.prettysheets_env$headers[[ss_key]])) {
+      .prettysheets_env$headers[[ss_key]] <- list()
+    }
+    .prettysheets_env$headers[[ss_key]][[key]] <- cached
+  }
+  cached
 }

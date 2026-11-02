@@ -23,7 +23,8 @@
 #' @param conditional_formats A list of formatting calls to apply after
 #'   writing, each itself a `list(range = ..., rule = ..., format = ...)` for
 #'   a boolean rule, or `list(range = ..., gradient = ...)` for a gradient
-#'   rule. Optional.
+#'   rule. Use `cols = ...` (a character vector of column names) in place of
+#'   `range` to target columns by name. Optional.
 #' @return The input `ss`, as a `sheets_id`, invisibly.
 #' @export
 #' @examples
@@ -55,6 +56,9 @@ range_write_format <- function(ss,
     ss, data = data, sheet = sheet, range = range,
     col_names = col_names, reformat = FALSE
   )
+  # New data can mean a new header row; don't reuse one cached earlier in
+  # an enclosing batch.
+  forget_sheet_properties(ss)
 
   run_batch({
     if (isTRUE(col_names) && !is.null(header_bold)) {
@@ -67,10 +71,10 @@ range_write_format <- function(ss,
 
     for (spec in conditional_formats) {
       if (!is.null(spec$gradient)) {
-        range_add_gradient_format(ss, sheet = sheet, range = spec$range, gradient = spec$gradient)
+        range_add_gradient_format(ss, sheet = sheet, range = spec$range, cols = spec$cols, gradient = spec$gradient)
       } else {
         range_add_conditional_format(
-          ss, sheet = sheet, range = spec$range, rule = spec$rule, format = spec$format
+          ss, sheet = sheet, range = spec$range, cols = spec$cols, rule = spec$rule, format = spec$format
         )
       }
     }
@@ -147,6 +151,9 @@ write_pretty_sheet <- function(ss,
     ss, data = data, sheet = sheet, range = range,
     col_names = col_names, reformat = FALSE
   )
+  # New data can mean a new header row; don't reuse one cached earlier in
+  # an enclosing batch.
+  forget_sheet_properties(ss)
 
   if (isTRUE(col_names)) {
     apply_gs_theme(ss, sheet = sheet, data = data, theme = theme)

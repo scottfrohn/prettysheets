@@ -142,7 +142,7 @@ test_that("sheet_clear_format() queues a deleteBanding request for each overlapp
   requests <- list()
   local_mocked_bindings(as_sheets_id = function(x) x, .package = "googlesheets4")
   local_mocked_bindings(
-    resolve_grid_range = function(ss, sheet, range) list(sheetId = 7, startRowIndex = 0L, endRowIndex = 5L),
+    resolve_grid_range = function(ss, sheet, range, ...) list(sheetId = 7, startRowIndex = 0L, endRowIndex = 5L),
     find_banded_range_ids = function(ss, grid_range) c(111, 222),
     find_conditional_format_indices = function(ss, grid_range) integer(0),
     send_or_queue = function(ss, request) {
@@ -163,7 +163,7 @@ test_that("sheet_clear_format() queues a deleteConditionalFormatRule request for
   requests <- list()
   local_mocked_bindings(as_sheets_id = function(x) x, .package = "googlesheets4")
   local_mocked_bindings(
-    resolve_grid_range = function(ss, sheet, range) list(sheetId = 7, startRowIndex = 0L, endRowIndex = 5L),
+    resolve_grid_range = function(ss, sheet, range, ...) list(sheetId = 7, startRowIndex = 0L, endRowIndex = 5L),
     find_banded_range_ids = function(ss, grid_range) integer(0),
     find_conditional_format_indices = function(ss, grid_range) c(2, 0),
     send_or_queue = function(ss, request) {
@@ -184,7 +184,7 @@ test_that("sheet_clear_format() sends only the clear request when there's no exi
   requests <- list()
   local_mocked_bindings(as_sheets_id = function(x) x, .package = "googlesheets4")
   local_mocked_bindings(
-    resolve_grid_range = function(ss, sheet, range) list(sheetId = 7),
+    resolve_grid_range = function(ss, sheet, range, ...) list(sheetId = 7),
     find_banded_range_ids = function(ss, grid_range) integer(0),
     find_conditional_format_indices = function(ss, grid_range) integer(0),
     send_or_queue = function(ss, request) {
@@ -203,7 +203,7 @@ test_that("sheet_format_tabcolor() sets tabColor when a color is supplied", {
   requests <- list()
   local_mocked_bindings(as_sheets_id = function(x) x, .package = "googlesheets4")
   local_mocked_bindings(
-    resolve_grid_range = function(ss, sheet, range) list(sheetId = 7),
+    resolve_grid_range = function(ss, sheet, range, ...) list(sheetId = 7),
     send_or_queue = function(ss, request) {
       requests[[length(requests) + 1]] <<- request
       invisible(ss)
@@ -222,7 +222,7 @@ test_that("sheet_format_tabcolor(color = NULL) clears the tab color by omitting 
   requests <- list()
   local_mocked_bindings(as_sheets_id = function(x) x, .package = "googlesheets4")
   local_mocked_bindings(
-    resolve_grid_range = function(ss, sheet, range) list(sheetId = 7),
+    resolve_grid_range = function(ss, sheet, range, ...) list(sheetId = 7),
     send_or_queue = function(ss, request) {
       requests[[length(requests) + 1]] <<- request
       invisible(ss)
@@ -241,7 +241,7 @@ local_mock_checkbox_request <- function(env = parent.frame()) {
   captured <- new.env()
   local_mocked_bindings(as_sheets_id = function(x) x, .package = "googlesheets4", .env = env)
   local_mocked_bindings(
-    resolve_grid_range = function(ss, sheet, range) list(sheetId = 0, startRowIndex = 1L, endRowIndex = 10L),
+    resolve_grid_range = function(ss, sheet, range, ...) list(sheetId = 0, startRowIndex = 1L, endRowIndex = 10L),
     send_or_queue = function(ss, request) {
       captured$request <- request
       invisible(ss)
