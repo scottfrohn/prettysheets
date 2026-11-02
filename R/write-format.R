@@ -56,23 +56,25 @@ range_write_format <- function(ss,
     col_names = col_names, reformat = FALSE
   )
 
-  if (isTRUE(col_names) && !is.null(header_bold)) {
-    sheet_format_header(
-      ss, sheet = sheet, row = 1,
-      bold = header_bold, background_color = header_background_color,
-      font_color = header_font_color, freeze = freeze_header
-    )
-  }
-
-  for (spec in conditional_formats) {
-    if (!is.null(spec$gradient)) {
-      range_add_gradient_format(ss, sheet = sheet, range = spec$range, gradient = spec$gradient)
-    } else {
-      range_add_conditional_format(
-        ss, sheet = sheet, range = spec$range, rule = spec$rule, format = spec$format
+  run_batch({
+    if (isTRUE(col_names) && !is.null(header_bold)) {
+      sheet_format_header(
+        ss, sheet = sheet, row = 1,
+        bold = header_bold, background_color = header_background_color,
+        font_color = header_font_color, freeze = freeze_header
       )
     }
-  }
+
+    for (spec in conditional_formats) {
+      if (!is.null(spec$gradient)) {
+        range_add_gradient_format(ss, sheet = sheet, range = spec$range, gradient = spec$gradient)
+      } else {
+        range_add_conditional_format(
+          ss, sheet = sheet, range = spec$range, rule = spec$rule, format = spec$format
+        )
+      }
+    }
+  })
 
   invisible(ss)
 }

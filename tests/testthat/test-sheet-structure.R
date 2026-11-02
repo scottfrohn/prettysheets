@@ -236,3 +236,57 @@ test_that("sheet_format_tabcolor(color = NULL) clears the tab color by omitting 
   expect_false("tabColor" %in% names(props))
   expect_equal(requests[[1]]$updateSheetProperties$fields, "tabColor")
 })
+
+local_mock_checkbox_request <- function(env = parent.frame()) {
+  captured <- new.env()
+  local_mocked_bindings(as_sheets_id = function(x) x, .package = "googlesheets4", .env = env)
+  local_mocked_bindings(
+    resolve_grid_range = function(ss, sheet, range) list(sheetId = 0, startRowIndex = 1L, endRowIndex = 10L),
+    send_or_queue = function(ss, request) {
+      captured$request <- request
+      invisible(ss)
+    },
+    .env = env
+  )
+  captured
+}
+
+test_that("range_checkbox() sends a strict BOOLEAN data-validation rule for the range", {
+  captured <- local_mock_checkbox_request()
+  range_checkbox("fake", range = "D2:D10")
+  expect_equal(
+    captured$request,
+    list(setDataValidation = list(
+      range = list(sheetId = 0, startRowIndex = 1L, endRowIndex = 10L),
+      rule = list(condition = list(type = "BOOLEAN"), strict = TRUE)
+    ))
+  )
+})
+
+test_that("range_checkbox() passes custom checked/unchecked values as condition values", {
+  captured <- local_mock_checkbox_request()
+  range_checkbox("fake", range = "D2:D10", checked = "Yes", unchecked = "No")
+  expect_equal(
+    captured$request$setDataValidation$rule$condition$values,
+    list(list(userEnteredValue = "Yes"), list(userEnteredValue = "No"))
+  )
+
+  range_checkbox("fake", range = "D2:D10", checked = "Done")
+  expect_equal(
+    captured$request$setDataValidation$rule$condition$values,
+    list(list(userEnteredValue = "Done"))
+  )
+})
+
+test_that("range_checkbox() rejects unchecked without checked", {
+  expect_error(range_checkbox("fake", range = "D2:D10", unchecked = "No"), "checked")
+})
+
+test_that("range_remove_checkbox() clears the range's data validation", {
+  captured <- local_mock_checkbox_request()
+  range_remove_checkbox("fake", range = "D2:D10")
+  expect_equal(
+    captured$request,
+    list(setDataValidation = list(range = list(sheetId = 0, startRowIndex = 1L, endRowIndex = 10L)))
+  )
+})

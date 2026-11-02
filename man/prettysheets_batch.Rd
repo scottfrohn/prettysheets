@@ -21,6 +21,19 @@ useful when you're applying several formatting operations to the same
 spreadsheet in a row and want to reduce API traffic (the Sheets API's
 documented per-user rate limit is 100 requests per 100 seconds).
 }
+\details{
+Inside a batch, the spreadsheet's sheet list (needed to turn a sheet name
+into the numeric id the API wants) is also fetched only once and reused,
+instead of once per call. A few functions still need to read the sheet
+live -- \code{\link[=sheet_clear_format]{sheet_clear_format()}} (and so the \verb{gs_theme_*()} functions)
+looks up existing banding and conditional formats, and \code{\link[=gs4_cols]{gs4_cols()}}
+without \code{data} reads the header row -- so a batch isn't always exactly
+one API call, but all the \emph{writes} go out together.
+
+The \verb{gs_theme_*()} functions and \code{\link[=write_pretty_sheet]{write_pretty_sheet()}} already batch
+themselves. Batches can be nested: an inner \code{prettysheets_batch()} just
+adds its requests to the outer one, which sends everything at the end.
+}
 \examples{
 \dontrun{
 prettysheets_batch({

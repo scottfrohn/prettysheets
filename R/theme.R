@@ -452,86 +452,90 @@ apply_gs_theme <- function(ss, sheet = NULL, data = NULL, theme) {
     ))
   }
 
-  table_range <- cellranger::cell_limits(ul = c(1, 1), lr = c(n_row + 1L, n_col))
-  grid_range <- resolve_grid_range(ss, sheet, table_range)
+  # Every step below queues into one batchUpdate (and shares one sheet
+  # lookup) instead of sending its own request.
+  run_batch({
+    table_range <- cellranger::cell_limits(ul = c(1, 1), lr = c(n_row + 1L, n_col))
+    grid_range <- resolve_grid_range(ss, sheet, table_range)
 
-  sheet_clear_format(ss, sheet = sheet, range = table_range)
+    sheet_clear_format(ss, sheet = sheet, range = table_range)
 
-  range_format(ss, sheet = sheet, range = table_range, vertical_alignment = "TOP")
+    range_format(ss, sheet = sheet, range = table_range, vertical_alignment = "TOP")
 
-  header <- theme$header
-  if (!is.null(header$bold) || !is.null(header$background_color) || !is.null(header$font_color)) {
-    range_format(
-      ss, sheet = sheet, range = cellranger::cell_rows(1),
-      bold = header$bold, background_color = header$background_color, font_color = header$font_color
-    )
-  }
+    header <- theme$header
+    if (!is.null(header$bold) || !is.null(header$background_color) || !is.null(header$font_color)) {
+      range_format(
+        ss, sheet = sheet, range = cellranger::cell_rows(1),
+        bold = header$bold, background_color = header$background_color, font_color = header$font_color
+      )
+    }
 
-  if (!is.null(theme$banding)) {
-    send_or_queue(ss, list(
-      addBanding = list(
-        bandedRange = list(
-          range = grid_range,
-          rowProperties = list(
-            headerColor = gs4_color(header$background_color %||% theme$banding$band1),
-            firstBandColor = gs4_color(theme$banding$band1),
-            secondBandColor = gs4_color(theme$banding$band2)
+    if (!is.null(theme$banding)) {
+      send_or_queue(ss, list(
+        addBanding = list(
+          bandedRange = list(
+            range = grid_range,
+            rowProperties = list(
+              headerColor = gs4_color(header$background_color %||% theme$banding$band1),
+              firstBandColor = gs4_color(theme$banding$band1),
+              secondBandColor = gs4_color(theme$banding$band2)
+            )
           )
         )
-      )
-    ))
-  }
-
-  types <- vapply(data, classify_column, character(1))
-  headers <- names(data)
-
-  for (i in seq_len(n_col)) {
-    col_range <- cellranger::cell_limits(ul = c(2, i), lr = c(n_row + 1L, i))
-    col_format <- theme_column_format(types[[i]], wrap_long_text = theme$wrap_long_text)
-    override <- theme$columns[[headers[i]]]
-    if (!is.null(override)) {
-      col_format <- utils::modifyList(col_format, override)
-    }
-    do.call(range_format, c(list(ss = ss, sheet = sheet, range = col_range), col_format))
-
-    if (identical(types[[i]], "url")) {
-      url_range <- list(
-        sheetId = grid_range$sheetId,
-        startRowIndex = 1L, # row 2 (0-based), skip the header
-        endRowIndex = as.integer(n_row + 1L),
-        startColumnIndex = as.integer(i - 1L),
-        endColumnIndex = as.integer(i)
-      )
-      send_or_queue(ss, url_hyperlink_request(url_range, as.character(data[[i]])))
+      ))
     }
 
-    width <- theme_fixed_width(types[[i]])
-    if (is.null(width)) {
-      width <- theme_column_width(headers[i], theme_display_strings(data[[i]], types[[i]]))
+    types <- vapply(data, classify_column, character(1))
+    headers <- names(data)
+
+    for (i in seq_len(n_col)) {
+      col_range <- cellranger::cell_limits(ul = c(2, i), lr = c(n_row + 1L, i))
+      col_format <- theme_column_format(types[[i]], wrap_long_text = theme$wrap_long_text)
+      override <- theme$columns[[headers[i]]]
+      if (!is.null(override)) {
+        col_format <- utils::modifyList(col_format, override)
+      }
+      do.call(range_format, c(list(ss = ss, sheet = sheet, range = col_range), col_format))
+
+      if (identical(types[[i]], "url")) {
+        url_range <- list(
+          sheetId = grid_range$sheetId,
+          startRowIndex = 1L, # row 2 (0-based), skip the header
+          endRowIndex = as.integer(n_row + 1L),
+          startColumnIndex = as.integer(i - 1L),
+          endColumnIndex = as.integer(i)
+        )
+        send_or_queue(ss, url_hyperlink_request(url_range, as.character(data[[i]])))
+      }
+
+      width <- theme_fixed_width(types[[i]])
+      if (is.null(width)) {
+        width <- theme_column_width(headers[i], theme_display_strings(data[[i]], types[[i]]))
+      }
+      send_or_queue(ss, set_column_width_request(grid_range$sheetId, i, width))
     }
-    send_or_queue(ss, set_column_width_request(grid_range$sheetId, i, width))
-  }
 
-  if (!is.null(theme$border)) {
-    range_format_border(
-      ss, sheet = sheet, range = table_range,
-      sides = theme$border$sides, style = theme$border$style, color = theme$border$color
-    )
-  }
-
-  for (spec in theme$conditional_formats) {
-    if (!is.null(spec$gradient)) {
-      range_add_gradient_format(ss, sheet = sheet, range = spec$range, gradient = spec$gradient)
-    } else {
-      range_add_conditional_format(
-        ss, sheet = sheet, range = spec$range, rule = spec$rule, format = spec$format
+    if (!is.null(theme$border)) {
+      range_format_border(
+        ss, sheet = sheet, range = table_range,
+        sides = theme$border$sides, style = theme$border$style, color = theme$border$color
       )
     }
-  }
 
-  if (isTRUE(theme$freeze_header)) {
-    sheet_freeze(ss, sheet = sheet, n_rows = 1)
-  }
+    for (spec in theme$conditional_formats) {
+      if (!is.null(spec$gradient)) {
+        range_add_gradient_format(ss, sheet = sheet, range = spec$range, gradient = spec$gradient)
+      } else {
+        range_add_conditional_format(
+          ss, sheet = sheet, range = spec$range, rule = spec$rule, format = spec$format
+        )
+      }
+    }
+
+    if (isTRUE(theme$freeze_header)) {
+      sheet_freeze(ss, sheet = sheet, n_rows = 1)
+    }
+  })
 
   invisible(ss)
 }
@@ -575,10 +579,13 @@ apply_gs_theme <- function(ss, sheet = NULL, data = NULL, theme) {
 #' whichever is wider) rather than read back from
 #' [googlesheets4::range_autofit()], since there's no API call that reports
 #' what autofit actually decided for a column -- which means, unlike that
-#' `googlesheets4` function, sizing columns doesn't send its own request
-#' outside this package's usual batching: every `gs_theme_*()` call (widths
-#' included) goes through the same queueing as the rest of `prettysheets`, so
-#' wrapping one in [prettysheets_batch()] *does* reduce it to a single API call.
+#' `googlesheets4` function, sizing columns doesn't send its own request.
+#'
+#' Each `gs_theme_*()` call batches itself: every formatting change (widths
+#' included) goes out in a single `batchUpdate`, after a few reads -- the
+#' sheet list, existing banding and conditional formats (to clear them),
+#' and the data itself if `data` isn't supplied. Theming several sheets
+#' inside one [prettysheets_batch()] combines all their writes into one call.
 #'
 #' @param ss Something that identifies a Google Sheet, processed through
 #'   [googlesheets4::as_sheets_id()].

@@ -73,10 +73,13 @@ Column widths are estimated from content (header and formatted data,
 whichever is wider) rather than read back from
 \code{\link[googlesheets4:range_autofit]{googlesheets4::range_autofit()}}, since there's no API call that reports
 what autofit actually decided for a column -- which means, unlike that
-\code{googlesheets4} function, sizing columns doesn't send its own request
-outside this package's usual batching: every \verb{gs_theme_*()} call (widths
-included) goes through the same queueing as the rest of \code{prettysheets}, so
-wrapping one in \code{\link[=prettysheets_batch]{prettysheets_batch()}} \emph{does} reduce it to a single API call.
+\code{googlesheets4} function, sizing columns doesn't send its own request.
+
+Each \verb{gs_theme_*()} call batches itself: every formatting change (widths
+included) goes out in a single \code{batchUpdate}, after a few reads -- the
+sheet list, existing banding and conditional formats (to clear them),
+and the data itself if \code{data} isn't supplied. Theming several sheets
+inside one \code{\link[=prettysheets_batch]{prettysheets_batch()}} combines all their writes into one call.
 }
 \section{Functions}{
 \itemize{

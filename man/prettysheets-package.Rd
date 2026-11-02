@@ -19,6 +19,7 @@ Key functions:
 \item \code{\link[=range_format]{range_format()}} / \code{\link[=range_format_border]{range_format_border()}} — basic cell formatting
 \item \code{\link[=sheet_freeze]{sheet_freeze()}}, \code{\link[=sheet_format_header]{sheet_format_header()}}, \code{\link[=sheet_format_tabcolor]{sheet_format_tabcolor()}} — sheet-level structure
 \item \code{\link[=range_merge]{range_merge()}} / \code{\link[=range_unmerge]{range_unmerge()}} — merged cells
+\item \code{\link[=range_checkbox]{range_checkbox()}} / \code{\link[=range_remove_checkbox]{range_remove_checkbox()}} — checkboxes
 \item \code{\link[=gs4_cols]{gs4_cols()}} — reference a range by column header name instead of letter
 \item \code{\link[=gs4_glimpse_cols]{gs4_glimpse_cols()}} — preview a data frame's columns alongside
 their spreadsheet column letters

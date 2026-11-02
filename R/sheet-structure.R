@@ -232,13 +232,15 @@ sheet_format_header <- function(ss,
                                  font_color = NULL,
                                  freeze = TRUE) {
   ss <- googlesheets4::as_sheets_id(ss)
-  range_format(
-    ss, sheet = sheet, range = cellranger::cell_rows(row),
-    bold = bold, background_color = background_color, font_color = font_color
-  )
-  if (freeze) {
-    sheet_freeze(ss, sheet = sheet, n_rows = row)
-  }
+  run_batch({
+    range_format(
+      ss, sheet = sheet, range = cellranger::cell_rows(row),
+      bold = bold, background_color = background_color, font_color = font_color
+    )
+    if (freeze) {
+      sheet_freeze(ss, sheet = sheet, n_rows = row)
+    }
+  })
   invisible(ss)
 }
 
@@ -307,5 +309,60 @@ range_unmerge <- function(ss, sheet = NULL, range) {
   grid_range <- resolve_grid_range(ss, sheet, range)
 
   request <- list(unmergeCells = list(range = grid_range))
+  send_or_queue(ss, request)
+}
+
+#' Add or remove checkboxes in a range of cells
+#'
+#' `range_checkbox()` turns every cell in `range` into a checkbox. Existing
+#' `TRUE`/`FALSE` values show as checked/unchecked boxes and blank cells
+#' become unchecked boxes. `range_remove_checkbox()` clears the range's data
+#' validation, turning the checkboxes back into plain cells (their values are
+#' kept).
+#'
+#' @inheritParams range_format
+#' @param checked,unchecked Optional custom values stored in the cell when the
+#'   box is checked/unchecked (e.g. `"Yes"`/`"No"`). Leave both `NULL` (the
+#'   default) to use `TRUE`/`FALSE`. If you set `unchecked`, you must also set
+#'   `checked`. Only used by `range_checkbox()`.
+#' @return The input `ss`, as a `sheets_id`, invisibly.
+#' @seealso Makes a `SetDataValidationRequest` with a `BOOLEAN` condition:
+#'   <https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/request#setdatavalidationrequest>
+#' @export
+#' @examples
+#' \dontrun{
+#' ss <- googlesheets4::gs4_create("prettysheets-demo", sheets = mtcars)
+#' range_checkbox(ss, range = "L2:L33")
+#' range_checkbox(ss, range = "M2:M33", checked = "Yes", unchecked = "No")
+#' range_remove_checkbox(ss, range = "L2:M33")
+#' }
+range_checkbox <- function(ss, sheet = NULL, range, checked = NULL, unchecked = NULL) {
+  if (is.null(checked) && !is.null(unchecked)) {
+    cli::cli_abort("{.arg unchecked} can only be set together with {.arg checked}.")
+  }
+  ss <- googlesheets4::as_sheets_id(ss)
+  grid_range <- resolve_grid_range(ss, sheet, range)
+
+  values <- lapply(drop_nulls(list(checked, unchecked)), function(v) {
+    list(userEnteredValue = as.character(v))
+  })
+  condition <- list(type = "BOOLEAN")
+  if (length(values) > 0) {
+    condition$values <- values
+  }
+  request <- list(setDataValidation = list(
+    range = grid_range,
+    rule = list(condition = condition, strict = TRUE)
+  ))
+  send_or_queue(ss, request)
+}
+
+#' @rdname range_checkbox
+#' @export
+range_remove_checkbox <- function(ss, sheet = NULL, range) {
+  ss <- googlesheets4::as_sheets_id(ss)
+  grid_range <- resolve_grid_range(ss, sheet, range)
+
+  request <- list(setDataValidation = list(range = grid_range))
   send_or_queue(ss, request)
 }

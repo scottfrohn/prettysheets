@@ -12,6 +12,7 @@
 #'   \item [range_format()] / [range_format_border()] — basic cell formatting
 #'   \item [sheet_freeze()], [sheet_format_header()], [sheet_format_tabcolor()] — sheet-level structure
 #'   \item [range_merge()] / [range_unmerge()] — merged cells
+#'   \item [range_checkbox()] / [range_remove_checkbox()] — checkboxes
 #'   \item [gs4_cols()] — reference a range by column header name instead of letter
 #'   \item [gs4_glimpse_cols()] — preview a data frame's columns alongside
 #'     their spreadsheet column letters

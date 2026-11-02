@@ -41,9 +41,10 @@
 #' @noRd
 ensure_sheet_exists <- function(ss, sheet, data = NULL, col_names = TRUE) {
   if (is.character(sheet) && length(sheet) == 1) {
-    existing <- googlesheets4::sheet_properties(ss)$name
+    existing <- cached_sheet_properties(ss)$name
     if (!(sheet %in% existing)) {
       googlesheets4::sheet_add(ss, sheet = sheet)
+      forget_sheet_properties(ss)
 
       if (!is.null(data)) {
         n_row <- nrow(data) + if (isTRUE(col_names)) 1L else 0L

@@ -72,6 +72,8 @@ Other structural helpers follow the same pattern:
 range_format_border(ss, sheet = "cars", range = "A1:K33", sides = "inside", color = "blue")
 range_merge(ss, sheet = "cars", range = "A2:B2")
 range_unmerge(ss, sheet = "cars", range = "A2:B2")
+range_checkbox(ss, sheet = "cars", range = "L2:L33")
+range_remove_checkbox(ss, sheet = "cars", range = "L2:L33")
 sheet_freeze(ss, sheet = "cars", n_rows = 1)
 sheet_format_header(ss, sheet = "cars") # bold header + freeze, for data written with range_write()
 sheet_format_tabcolor(ss, sheet = "cars", color = "forestgreen")
@@ -207,9 +209,11 @@ write_pretty_sheet(ss, data = styled, sheet = "themed_copy") # same theme, no `t
 
 Every `prettysheets` function normally sends its own `batchUpdate` call as
 soon as it runs. Wrap a block of calls in `prettysheets_batch()` to collect
-them and send everything together in a single request instead, which
-matters if you're making many formatting calls in a row and want to stay
-comfortably under the Sheets API's rate limits:
+them and send everything together in a single request instead. Inside a
+batch the spreadsheet's sheet list is also looked up only once rather than
+once per call, so this is much faster when you're making many formatting
+calls in a row (and keeps you comfortably under the Sheets API's rate
+limits):
 
 ```{r}
 prettysheets_batch({
@@ -217,3 +221,7 @@ prettysheets_batch({
   range_format_border(ss, sheet = "cars", range = "A1:K1", color = "gray40")
 })
 ```
+
+The `gs_theme_*()` functions and `write_pretty_sheet()` batch themselves,
+and batches can be nested, so it's fine to put a theme call inside your own
+`prettysheets_batch()` block.

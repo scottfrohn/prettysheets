@@ -46,6 +46,18 @@ apply_requests <- function(ss, requests) {
 #' spreadsheet in a row and want to reduce API traffic (the Sheets API's
 #' documented per-user rate limit is 100 requests per 100 seconds).
 #'
+#' Inside a batch, the spreadsheet's sheet list (needed to turn a sheet name
+#' into the numeric id the API wants) is also fetched only once and reused,
+#' instead of once per call. A few functions still need to read the sheet
+#' live -- [sheet_clear_format()] (and so the `gs_theme_*()` functions)
+#' looks up existing banding and conditional formats, and [gs4_cols()]
+#' without `data` reads the header row -- so a batch isn't always exactly
+#' one API call, but all the *writes* go out together.
+#'
+#' The `gs_theme_*()` functions and [write_pretty_sheet()] already batch
+#' themselves. Batches can be nested: an inner `prettysheets_batch()` just
+#' adds its requests to the outer one, which sends everything at the end.
+#'
 #' @param code Code containing one or more `prettysheets` formatting calls.
 #' @return The `sheets_id` of the spreadsheet that was updated, invisibly.
 #' @export
@@ -57,17 +69,42 @@ apply_requests <- function(ss, requests) {
 #' })
 #' }
 prettysheets_batch <- function(code) {
+  run_batch(code, allow_empty = FALSE)
+}
+
+#' Engine behind [prettysheets_batch()], also used internally by functions
+#' that make several requests (e.g. the `gs_theme_*()` functions) so they
+#' batch themselves
+#'
+#' If a batch is already being collected, `code` just adds to it and the
+#' outermost batch sends everything.
+#'
+#' @param code Code containing `prettysheets` formatting calls.
+#' @param allow_empty Logical; if `FALSE`, error when `code` queued nothing.
+#' @keywords internal
+#' @noRd
+run_batch <- function(code, allow_empty = TRUE) {
+  if (isTRUE(.prettysheets_env$collecting)) {
+    force(code)
+    return(invisible(.prettysheets_env$ss))
+  }
+
   .prettysheets_env$collecting <- TRUE
   .prettysheets_env$queue <- list()
   .prettysheets_env$ss <- NULL
+  .prettysheets_env$sheet_props <- list()
   on.exit({
     .prettysheets_env$collecting <- FALSE
     .prettysheets_env$queue <- list()
+    .prettysheets_env$sheet_props <- list()
   })
 
   force(code)
 
   if (length(.prettysheets_env$queue) == 0 || is.null(.prettysheets_env$ss)) {
+    if (allow_empty) {
+      return(invisible(.prettysheets_env$ss))
+    }
     cli::cli_abort("No {.pkg prettysheets} requests were queued inside {.fn prettysheets_batch}.")
   }
 
@@ -80,6 +117,7 @@ prettysheets_batch <- function(code) {
 .prettysheets_env$collecting <- FALSE
 .prettysheets_env$queue <- list()
 .prettysheets_env$ss <- NULL
+.prettysheets_env$sheet_props <- list()
 
 #' Queue or immediately send a request, depending on whether we're inside
 #' [prettysheets_batch()]
@@ -93,4 +131,35 @@ send_or_queue <- function(ss, request) {
     return(invisible(ss))
   }
   apply_requests(ss, request)
+}
+
+#' [googlesheets4::sheet_properties()], fetched once per spreadsheet per
+#' batch
+#'
+#' Outside a batch this is a plain `sheet_properties()` call. Inside one,
+#' the result is cached until the batch ends, so a block of calls against
+#' the same spreadsheet doesn't re-read its sheet list every time. Call
+#' `forget_sheet_properties()` after anything that adds, removes, or renames
+#' a sheet.
+#'
+#' @param ss A `sheets_id`.
+#' @keywords internal
+#' @noRd
+cached_sheet_properties <- function(ss) {
+  if (!isTRUE(.prettysheets_env$collecting)) {
+    return(googlesheets4::sheet_properties(ss))
+  }
+  key <- as.character(ss)
+  if (is.null(.prettysheets_env$sheet_props[[key]])) {
+    .prettysheets_env$sheet_props[[key]] <- googlesheets4::sheet_properties(ss)
+  }
+  .prettysheets_env$sheet_props[[key]]
+}
+
+#' @rdname cached_sheet_properties
+#' @keywords internal
+#' @noRd
+forget_sheet_properties <- function(ss) {
+  .prettysheets_env$sheet_props[[as.character(ss)]] <- NULL
+  invisible(ss)
 }

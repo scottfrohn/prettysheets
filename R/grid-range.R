@@ -2,7 +2,8 @@
 #'
 #' Internal helper used by every `prettysheets` function that needs to target
 #' cells. Looks up the numeric `sheetId` (the Sheets API always wants an
-#' integer id, never a sheet name) via [googlesheets4::sheet_properties()],
+#' integer id, never a sheet name) via [googlesheets4::sheet_properties()]
+#' (cached within a [prettysheets_batch()]),
 #' and converts the range into zero-based, half-open row/column bounds.
 #'
 #' @param ss A `sheets_id`, already run through [googlesheets4::as_sheets_id()]
@@ -28,7 +29,7 @@
 #' @keywords internal
 #' @noRd
 resolve_grid_range <- function(ss, sheet = NULL, range = NULL, include_header = TRUE) {
-  sheet_props <- googlesheets4::sheet_properties(ss)
+  sheet_props <- cached_sheet_properties(ss)
 
   limits <- NULL
   if (!is.null(range)) {
